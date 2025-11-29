@@ -1,42 +1,38 @@
-## DB schema 문서
+# 📘 Jira Lite Extended - Database Schema Specification (v2.0)
 
-제공해드린 SQL 스키마에 대한 상세 문서입니다. 개발 팀(프론트엔드/백엔드)이 데이터 구조를 명확히 이해하고 개발에 착수할 수 있도록 정리했습니다.
+## 1\. 개요 (Overview)
 
----
+  * **Target Engine**: PostgreSQL 14+
+  * **Naming Convention**: `snake_case` (테이블 및 컬럼명)
+  * **설계 핵심 목표**:
+    1.  **이력 관리 분리**: 팀 활동 로그(거시적)와 이슈 변경 이력(미시적)을 분리하여 조회 성능 최적화.
+    2.  **검색 성능 보장**: 이슈 검색 및 알림 조회를 위한 인덱싱 전략 포함.
+    3.  **유연한 워크플로우**: 프로젝트별 커스텀 칸반 상태(State) 지원.
+    4.  **데이터 무결성**: Soft Delete와 참조 무결성(Foreign Key)의 조화.
 
-# Jira Lite Extended - Database Schema Documentation
+-----
 
-## 1. 개요 (Overview)
+## 2\. ERD (Entity Relationship Diagram)
 
-- **Database Engine**: PostgreSQL 14+
-- **Naming Convention**: `snake_case` (테이블 및 컬럼명)
-- **Key Strategy**:
-    - **Soft Delete**: 주요 데이터 삭제 시 `deleted_at` 타임스탬프 기록 (물리 삭제 X)
-    - **Rbac**: `team_members.role`을 통한 역할 기반 접근 제어
-    - **Flexible Kanban**: 프로젝트별 커스텀 상태(`project_states`) 지원
-    - **AI Caching**: 비용 절감을 위한 AI 응답 결과 해시 캐싱
+주요 엔티티 간의 관계를 시각화했습니다. `issue_histories`가 별도로 분리된 점에 주목하십시오.
 
----
-
-## 2. ERD (Entity Relationship Diagram)
-
-데이터 간의 주요 관계를 시각화한 구조도입니다.
-
-코드 스니펫
-
-# 
-
-`erDiagram
+```mermaid
+erDiagram
     USERS ||--o{ TEAM_MEMBERS : "joins"
-    USERS ||--o{ ISSUES : "authored/assigned"
     TEAMS ||--o{ TEAM_MEMBERS : "has"
     TEAMS ||--o{ PROJECTS : "owns"
+    TEAMS ||--o{ TEAM_ACTIVITY_LOGS : "logs events"
+    
     PROJECTS ||--o{ PROJECT_STATES : "defines columns"
     PROJECTS ||--o{ ISSUES : "contains"
+    
     PROJECT_STATES ||--o{ ISSUES : "current status"
+    
+    ISSUES ||--o{ ISSUE_HISTORIES : "tracks changes"
     ISSUES ||--o{ COMMENTS : "has"
     ISSUES ||--o{ SUBTASKS : "has"
-    ISSUES ||--o{ AI_CACHES : "caches"
+    ISSUES ||--o{ AI_CACHES : "caches result"
+    
     ISSUES }|--|{ PROJECT_LABELS : "tagged with"
 
     USERS {
@@ -44,203 +40,211 @@
         string email
         string provider "google/email"
     }
-    TEAMS {
-        uuid id PK
-        string name
-    }
-    PROJECTS {
-        uuid id PK
-        string name
-        boolean is_archived
-    }
     ISSUES {
         uuid id PK
         string title
-        double position "LexoRank"
-    }`
+        uuid state_id FK
+        double board_position "ordering"
+    }
+    ISSUE_HISTORIES {
+        uuid id PK
+        string field_name
+        string old_value
+        string new_value
+    }
+```
 
----
+-----
 
-## 3. 테이블 상세 명세 (Table Details)
+## 3\. 상세 테이블 명세 (Table Details)
 
 ### 3.1 사용자 및 인증 (User & Auth)
 
-### `users`
+#### `users`
 
-시스템의 모든 사용자 정보입니다. 이메일 가입자와 Google OAuth 가입자를 모두 수용합니다.
+**FR-001, 002, 004, 005**: 서비스의 주체. 이메일 가입과 OAuth 가입을 모두 지원합니다.
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `id` | UUID | Primary Key |  |
-| `email` | VARCHAR(255) | 사용자 이메일 | Unique |
-| `password_hash` | VARCHAR(255) | 비밀번호 해시 | OAuth 유저는 NULL 가능 |
-| `name` | VARCHAR(50) | 표시 이름 |  |
-| `google_id` | VARCHAR(255) | Google OAuth 고유 ID | Unique, OAuth 연동 시 사용 |
-| `deleted_at` | TIMESTAMP | Soft Delete 여부 | NULL이면 활성 사용자 |
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| :--- | :--- | :--- | :--- |
+| `id` | UUID | PK | `gen_random_uuid()` |
+| `email` | VARCHAR(255) | UNIQUE, NOT NULL | 로그인 아이디 |
+| `password_hash` | VARCHAR(255) | NULLable | Google 로그인 유저는 NULL |
+| `name` | VARCHAR(50) | NOT NULL | 사용자 이름 |
+| `profile_image` | TEXT | NULLable | 프로필 이미지 URL |
+| `google_id` | VARCHAR(255) | UNIQUE | Google OAuth 고유 식별자 |
+| `deleted_at` | TIMESTAMP | NULLable | **Soft Delete** 필드 |
 
-### `password_reset_tokens`
+#### `password_reset_tokens`
 
-비밀번호 찾기 시 발송되는 토큰 관리 테이블입니다.
+**FR-003**: 비밀번호 재설정용 임시 토큰.
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `token` | VARCHAR(255) | 인증 토큰 |  |
-| `expires_at` | TIMESTAMP | 만료 시간 | 생성 후 1시간 |
+| 컬럼명 | 타입 | 설명 |
+| :--- | :--- | :--- |
+| `user_id` | UUID | 대상 유저 (FK) |
+| `token` | VARCHAR | 인증 토큰 |
+| `expires_at` | TIMESTAMP | 만료 시간 (1시간) |
 
----
+-----
 
-### 3.2 팀 관리 (Team Management)
+### 3.2 팀 및 조직 (Team & Organization)
 
-### `teams`
+#### `teams`
 
-사용자가 속한 그룹(조직)입니다.
+**FR-010**: 최상위 조직 단위.
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `id` | UUID | Primary Key |  |
-| `owner_id` | UUID | 팀 소유자 ID | `users.id` FK |
+| 컬럼명 | 타입 | 설명 |
+| :--- | :--- | :--- |
+| `owner_id` | UUID | 팀 소유자 (FK) |
+| `deleted_at` | TIMESTAMP | Soft Delete 필드 |
 
-### `team_members`
+#### `team_members`
 
-사용자와 팀의 다대다 관계를 해소하며, 팀 내 역할을 정의합니다.
+**FR-013\~018**: 사용자와 팀의 N:M 관계 및 역할 정의.
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `team_id` | UUID | 팀 ID | FK |
-| `user_id` | UUID | 사용자 ID | FK |
-| `role` | ENUM | 역할 | `OWNER`, `ADMIN`, `MEMBER` |
+| 컬럼명 | 타입 | 설명 |
+| :--- | :--- | :--- |
+| `team_id` | UUID | 팀 ID (FK) |
+| `user_id` | UUID | 사용자 ID (FK) |
+| `role` | ENUM | `OWNER`, `ADMIN`, `MEMBER` |
+| **Index** | | `UNIQUE(team_id, user_id)` |
 
-### `team_invitations`
+#### `team_activity_logs`
 
-아직 가입하지 않거나 팀에 합류하지 않은 멤버를 위한 초대 정보입니다.
+**FR-019**: 팀 차원의 주요 이벤트 로그 (멤버 가입, 프로젝트 생성 등).
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `email` | VARCHAR | 초대받은 이메일 |  |
-| `token` | VARCHAR | 초대 수락용 토큰 |  |
-| `expires_at` | TIMESTAMP | 만료 시간 | 7일 |
+| 컬럼명 | 타입 | 설명 |
+| :--- | :--- | :--- |
+| `team_id` | UUID | 소속 팀 (FK) |
+| `actor_id` | UUID | 행위자 (FK) |
+| `target_type` | VARCHAR | 예: 'PROJECT', 'MEMBER' |
+| `action_type` | VARCHAR | 예: 'CREATED', 'LEFT' |
+| `details` | JSONB | 변경 상세 데이터 (스냅샷) |
 
-### `team_activity_logs`
+-----
 
-팀 내에서 발생하는 주요 변경 사항(Audit Log)을 기록합니다.
+### 3.3 프로젝트 및 워크플로우 (Project & Workflow)
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `target_type` | VARCHAR | 대상 종류 | 예: 'ISSUE', 'MEMBER' |
-| `action_type` | VARCHAR | 행위 종류 | 예: 'CREATE', 'UPDATE' |
-| `details` | JSONB | 변경 상세 내용 | 이전 값/새로운 값 저장 |
+#### `projects`
 
----
+**FR-020\~026**: 이슈들의 집합.
 
-### 3.3 프로젝트 및 칸반 (Project & Kanban)
+| 컬럼명 | 타입 | 설명 |
+| :--- | :--- | :--- |
+| `name` | VARCHAR(100) | 프로젝트명 |
+| `is_archived` | BOOLEAN | 아카이브 여부 (기본 FALSE) |
 
-### `projects`
+#### `project_states` (핵심)
 
-이슈를 관리하는 작업 단위입니다.
+**FR-053, 054**: 프로젝트별 칸반 컬럼 정의. **이슈의 상태는 이 테이블의 ID를 참조합니다.**
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `team_id` | UUID | 소속 팀 ID | FK |
-| `is_archived` | BOOLEAN | 아카이브 여부 | True 시 읽기 전용 취급 |
+| 컬럼명 | 타입 | 설명 |
+| :--- | :--- | :--- |
+| `project_id` | UUID | 프로젝트 ID (FK) |
+| `name` | VARCHAR(30) | 상태명 (예: Done) |
+| `position` | DOUBLE | 컬럼 표시 순서 (1.0, 2.0...) |
+| `wip_limit` | INTEGER | 최대 이슈 허용 수 (NULL=무제한) |
 
-### `project_states` (핵심)
+-----
 
-**칸반 보드의 컬럼**을 정의합니다. 프로젝트마다 서로 다른 진행 상태를 가질 수 있습니다.
+### 3.4 이슈 및 히스토리 (Issue & Tracking)
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `project_id` | UUID | 프로젝트 ID | FK |
-| `name` | VARCHAR(30) | 상태 이름 | 예: Backlog, Done |
-| `position` | DOUBLE | 컬럼 표시 순서 |  |
-| `wip_limit` | INT | Work In Progress 제한 | NULL이면 무제한 |
+#### `issues`
 
----
+**FR-030\~037**: 핵심 작업 티켓.
 
-### 3.4 이슈 트래킹 (Issue Tracking)
+| 컬럼명 | 타입 | 설명 |
+| :--- | :--- | :--- |
+| `state_id` | UUID | **현재 상태** (`project_states.id` FK) |
+| `assignee_id` | UUID | 담당자 (FK, Nullable) |
+| `priority` | ENUM | `HIGH`, `MEDIUM`, `LOW` |
+| `title` | VARCHAR(200) | 제목 |
+| `board_position` | DOUBLE | **컬럼 내 정렬 순서** (Drag\&Drop용) |
+| `deleted_at` | TIMESTAMP | Soft Delete 필드 |
 
-### `issues`
+#### `issue_histories` (New & Improved)
 
-가장 핵심적인 작업 단위(티켓)입니다.
+**FR-039**: 이슈의 필드 변경 사항만 **별도로 기록**하여 성능 최적화.
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `project_id` | UUID | 프로젝트 ID | FK |
-| `state_id` | UUID | **현재 상태(컬럼)** | `project_states.id` FK |
-| `author_id` | UUID | 작성자 | FK |
-| `assignee_id` | UUID | 담당자 | FK (Nullable) |
-| `priority` | ENUM | 우선순위 | `HIGH`, `MEDIUM`, `LOW` |
-| `board_position` | DOUBLE | **컬럼 내 순서** | Drag & Drop 정렬용 |
-| `description` | TEXT | 본문 | 마크다운 지원 권장 |
+| 컬럼명 | 타입 | 설명 |
+| :--- | :--- | :--- |
+| `issue_id` | UUID | 대상 이슈 (FK) |
+| `actor_id` | UUID | 변경한 사람 (FK) |
+| `field_name` | VARCHAR | 변경된 필드명 ('STATUS', 'ASSIGNEE' 등) |
+| `old_value` | TEXT | 변경 전 값 (문자열 변환) |
+| `new_value` | TEXT | 변경 후 값 |
+| `created_at` | TIMESTAMP | 변경 일시 |
 
-### `subtasks`
+#### `issue_labels` & `project_labels`
 
-이슈 내부의 체크리스트 항목입니다.
+**FR-038**: 라벨링 시스템. N:M 관계 테이블 포함.
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `issue_id` | UUID | 부모 이슈 ID | FK |
-| `is_completed` | BOOLEAN | 완료 여부 |  |
+-----
 
-### `comments`
+### 3.5 AI 기능 (AI Features)
 
-이슈에 달린 댓글입니다.
+#### `ai_caches`
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `content` | TEXT | 댓글 내용 | 1000자 제한 |
+**FR-040, 041, 045**: 비용 절감을 위한 결과 저장소.
 
----
+| 컬럼명 | 타입 | 설명 |
+| :--- | :--- | :--- |
+| `feature_type` | ENUM | `SUMMARY`, `SUGGESTION`, `COMMENT_SUMMARY` |
+| `input_hash` | VARCHAR(64) | **SHA256(Input)**. 변경 감지 및 캐시 Hit용 |
+| `output_text` | TEXT | LLM 응답 결과 |
+| **Constraint** | | `UNIQUE(issue_id, feature_type, input_hash)` |
 
-### 3.5 AI 기능 및 기타 (AI & Utils)
+-----
 
-### `ai_caches`
+## 4\. 인덱싱 전략 (Performance Optimization)
 
-LLM API 호출 비용 절감 및 속도 향상을 위한 캐시 테이블입니다.
+개선된 스키마는 PRD 요구사항에 맞춰 다음 인덱스를 필수로 생성해야 합니다.
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `issue_id` | UUID | 대상 이슈 | FK |
-| `feature_type` | ENUM | 기능 종류 | `SUMMARY`, `SUGGESTION` 등 |
-| `input_hash` | VARCHAR | **입력 데이터 해시** | SHA256(Description) 등 |
-| `output_text` | TEXT | AI 응답 결과 |  |
-- **Logic**: `input_hash`가 변경되면 캐시 Miss로 간주하여 API를 재호출합니다.
+1.  **이슈 검색 최적화**:
+      * `CREATE INDEX idx_issues_search_title ON issues(title);`
+      * `title` 기반 `LIKE` 검색 속도 향상.
+2.  **칸반 보드 로딩 속도**:
+      * `CREATE INDEX idx_issues_project_state ON issues(project_id, state_id);`
+      * 프로젝트 진입 시 칸반 보드 렌더링 최적화.
+3.  **내 업무/알림 조회**:
+      * `CREATE INDEX idx_issues_assignee ON issues(assignee_id);`
+      * `CREATE INDEX idx_notifications_user_unread ON notifications(user_id) WHERE is_read = FALSE;`
+4.  **Soft Delete 필터링**:
+      * `CREATE INDEX idx_issues_deleted_at ON issues(deleted_at) WHERE deleted_at IS NULL;`
+      * 삭제되지 않은 데이터만 빠르게 조회.
 
-### `ai_usage_logs`
+-----
 
-Rate Limiting(사용량 제한) 구현을 위한 로그입니다.
+## 5\. 개발 가이드 (Implementation Notes)
 
-| **컬럼명** | **타입** | **설명** | **비고** |
-| --- | --- | --- | --- |
-| `user_id` | UUID | 사용자 ID |  |
-| `created_at` | TIMESTAMP | 요청 시간 |  |
+### 5.1 이슈 히스토리 기록 (History Tracking)
 
----
+백엔드 로직에서 `issues` 테이블을 업데이트할 때, **반드시 변경 사항을 감지하여 `issue_histories`에 Insert** 해야 합니다.
 
-## 4. 구현 가이드 (Implementation Guide)
+  * **Case**: 사용자가 상태를 'Backlog' → 'In Progress'로 드래그.
+  * **Action**:
+    1.  `UPDATE issues SET state_id = ?, board_position = ? ...`
+    2.  `INSERT INTO issue_histories (issue_id, field_name, old_value, new_value) VALUES (..., 'STATUS', 'Backlog', 'In Progress')`
 
-개발 시 유의해야 할 주요 로직 및 패턴입니다.
+### 5.2 커스텀 상태 초기화 (Custom Status Init)
 
-### 4.1 상태 관리 (Status Management)
+프로젝트 생성(`POST /projects`) 시, 백엔드는 자동으로 **기본 3개 상태**를 `project_states`에 생성해주어야 합니다.
 
-- **초기화**: 프로젝트 생성 시, 백엔드는 반드시 해당 프로젝트에 대해 기본 3개 상태(`Backlog`, `In Progress`, `Done`)를 `project_states` 테이블에 INSERT 해야 합니다.
-- **이동**: 이슈의 상태 변경은 `issues.state_id`를 업데이트하는 것으로 처리합니다.
+  * 1: `Backlog` (pos: 1.0)
+  * 2: `In Progress` (pos: 2.0)
+  * 3: `Done` (pos: 3.0)
 
-### 4.2 Drag & Drop 정렬 (Ordering)
+### 5.3 AI 캐싱 로직 (AI Caching)
 
-- **Position 필드**: `issues.board_position`과 `project_states.position`은 `DOUBLE PRECISION` 타입입니다.
-- **삽입 로직**:
-    - 두 아이템 사이에 삽입 시: `(Prev_Item.pos + Next_Item.pos) / 2`
-    - 충돌 또는 정밀도 한계 도달 시: 전체 재정렬(Rebalancing) 로직 수행 (가산점 요소).
+AI 기능 요청 시 항상 DB를 먼저 확인하십시오.
 
-### 4.3 데이터 조회 (Soft Delete)
+  * `Key`: `issue_id` + `feature_type` + `Hash(현재 description)`
+  * DB에 있으면 반환 (API 호출 X, 비용 0)
+  * DB에 없으면 API 호출 후 저장.
 
-- **기본 규칙**: 데이터를 조회하는 모든 쿼리(`SELECT`)에는 반드시 `WHERE deleted_at IS NULL` 조건이 포함되어야 합니다.
-- **ORM 사용 시**: Prisma, TypeORM, Sequelize 등의 "Soft Delete Middleware" 기능을 활성화하여 자동화하는 것을 권장합니다.
+### 5.4 데이터 제한 (Validation)
 
-### 4.4 AI 캐싱 전략
+다음 제한 사항은 DB 스키마가 아닌 **Service Layer 코드**에서 검증해야 합니다.
 
-1. 사용자가 "요약하기" 버튼 클릭.
-2. 서버는 현재 `issues.description`의 해시값(`sha256`) 생성.
-3. DB `ai_caches`에서 `issue_id`와 `input_hash`가 일치하는 레코드 조회.
-4. 존재하면 `output_text` 반환 (API 호출 X).
-5. 없으면 LLM API 호출 -> 결과 반환 및 `ai_caches`에 저장.
+  * 팀당 프로젝트 최대 15개.
+  * 프로젝트당 이슈 최대 200개.
+  * 이슈당 서브태스크 최대 20개.
