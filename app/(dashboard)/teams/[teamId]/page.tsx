@@ -57,6 +57,7 @@ export default function TeamDetailPage() {
 
   const [teamFormData, setTeamFormData] = useState({
     name: team?.name || '',
+    description: team?.description || '',
   })
 
   // 현재 사용자의 팀 내 역할 찾기
@@ -420,7 +421,7 @@ export default function TeamDetailPage() {
                 <h3 className="text-lg font-semibold mb-4">팀 정보 수정</h3>
                 <div className="space-y-4">
                   <Button onClick={() => {
-                    setTeamFormData({ name: team?.name || '' })
+                    setTeamFormData({ name: team?.name || '', description: team?.description || '' })
                     setIsEditTeamModalOpen(true)
                   }}>
                     팀 정보 수정
@@ -556,6 +557,18 @@ export default function TeamDetailPage() {
             onChange={(e) => setTeamFormData({ ...teamFormData, name: e.target.value })}
             required
           />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              설명
+            </label>
+            <textarea
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={4}
+              placeholder="팀에 대한 간단한 설명을 입력하세요"
+              value={teamFormData.description}
+              onChange={(e) => setTeamFormData({ ...teamFormData, description: e.target.value })}
+            />
+          </div>
           <div className="flex gap-3 justify-end">
             <Button
               type="button"
