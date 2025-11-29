@@ -40,15 +40,26 @@ export const commentService = {
       notifyUserIds.add(issue.assignee_id)
     }
 
+    console.log('🔔 [알림] 댓글 생성 - 알림 전송 시작')
+    console.log('   이슈 작성자:', issue.author_id)
+    console.log('   이슈 담당자:', issue.assignee_id)
+    console.log('   댓글 작성자:', userId)
+    console.log('   알림 받을 사람:', Array.from(notifyUserIds))
+
     for (const targetUserId of notifyUserIds) {
-      await createNotification({
-        userId: targetUserId,
-        type: 'COMMENT_CREATED',
-        title: '새로운 댓글이 작성되었습니다',
-        content: `"${issue.title}" 이슈에 댓글이 작성되었습니다`,
-        relatedId: issueId,
-        relatedType: 'ISSUE'
-      })
+      try {
+        await createNotification({
+          userId: targetUserId,
+          type: 'COMMENT_CREATED',
+          title: '새로운 댓글이 작성되었습니다',
+          content: `"${issue.title}" 이슈에 댓글이 작성되었습니다`,
+          relatedId: issueId,
+          relatedType: 'ISSUE'
+        })
+        console.log(`✅ [알림] ${targetUserId}에게 알림 전송 성공`)
+      } catch (error) {
+        console.error(`❌ [알림] ${targetUserId}에게 알림 전송 실패:`, error)
+      }
     }
 
     return comment

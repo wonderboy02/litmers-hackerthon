@@ -67,7 +67,7 @@ export function useGenerateSuggestion(projectId: string, issueId: string) {
 }
 
 /**
- * FR-043: 라벨 추천
+ * FR-043: 라벨 추천 (기존 이슈용)
  */
 export function useRecommendLabels(projectId: string, issueId: string) {
   return useMutation({
@@ -86,6 +86,35 @@ export function useRecommendLabels(projectId: string, issueId: string) {
 
       const data = await res.json()
       return data.labels
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    },
+  })
+}
+
+/**
+ * FR-043: 라벨 추천 (이슈 생성 전용 - title/description 직접 전달)
+ */
+export function useRecommendLabelsForNewIssue(projectId: string) {
+  return useMutation({
+    mutationFn: async (data: { title: string; description: string }) => {
+      const res = await fetch(`/api/projects/${projectId}/ai/recommend-labels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error?.message || 'AI 라벨 추천에 실패했습니다')
+      }
+
+      const result = await res.json()
+      return result.labels as string[]
+    },
+    onSuccess: () => {
+      toast.success('AI가 라벨을 추천했습니다')
     },
     onError: (error: Error) => {
       toast.error(error.message)

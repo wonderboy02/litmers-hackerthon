@@ -5,6 +5,8 @@ import { Modal } from '@/app/components/common/Modal'
 import { useCreateIssue } from '@/app/lib/hooks/useIssues'
 import { useProjectStates, useProjectLabels } from '@/app/lib/hooks/useProjects'
 import { useTeamMembers } from '@/app/lib/hooks/useTeams'
+import { useRecommendLabelsForNewIssue, useDetectDuplicates } from '@/app/lib/hooks/useAI'
+import { Tag, AlertCircle } from 'lucide-react'
 
 interface CreateIssueModalProps {
   isOpen: boolean
@@ -26,10 +28,17 @@ export function CreateIssueModal({
   const [dueDate, setDueDate] = useState('')
   const [selectedLabels, setSelectedLabels] = useState<string[]>([])
 
+  // AI 기능 상태 (FR-043, FR-044)
+  const [duplicateIssues, setDuplicateIssues] = useState<Array<{ id: string; title: string; similarity: string }>>([])
+
   const createIssueMutation = useCreateIssue(projectId)
   const { data: states } = useProjectStates(projectId)
   const { data: labels } = useProjectLabels(projectId)
   const { data: members } = useTeamMembers(teamId)
+
+  // AI mutations (FR-043, FR-044)
+  const recommendLabelsMutation = useRecommendLabelsForNewIssue(projectId)
+  const detectDuplicatesMutation = useDetectDuplicates(projectId)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,6 +71,7 @@ export function CreateIssueModal({
       setAssigneeId('')
       setDueDate('')
       setSelectedLabels([])
+      setDuplicateIssues([])
       onClose()
     } catch (error) {
       // 에러는 useCreateIssue의 onError에서 처리됨
@@ -78,6 +88,51 @@ export function CreateIssueModal({
         return
       }
       setSelectedLabels([...selectedLabels, labelId])
+    }
+  }
+
+  // FR-043: AI 라벨 추천
+  const handleRecommendLabels = async () => {
+    if (!title.trim()) {
+      alert('제목을 입력해주세요')
+      return
+    }
+
+    try {
+      const recommendedLabelIds = await recommendLabelsMutation.mutateAsync({
+        title,
+        description,
+      })
+
+      // 추천된 라벨 자동 선택 (최대 5개 제한 고려)
+      const newLabels = [...selectedLabels]
+      for (const labelId of recommendedLabelIds) {
+        if (!newLabels.includes(labelId) && newLabels.length < 5) {
+          newLabels.push(labelId)
+        }
+      }
+      setSelectedLabels(newLabels)
+    } catch (error) {
+      console.error('AI 라벨 추천 에러:', error)
+    }
+  }
+
+  // FR-044: AI 중복 이슈 탐지
+  const handleDetectDuplicates = async () => {
+    if (!title.trim()) {
+      alert('제목을 입력해주세요')
+      return
+    }
+
+    try {
+      const duplicates = await detectDuplicatesMutation.mutateAsync({
+        title,
+        description,
+      })
+
+      setDuplicateIssues(duplicates || [])
+    } catch (error) {
+      console.error('AI 중복 탐지 에러:', error)
     }
   }
 
@@ -121,6 +176,66 @@ export function CreateIssueModal({
           />
           <p className="text-xs text-gray-500 mt-1">{description.length}/5000</p>
         </div>
+
+        {/* AI 기능 버튼 (FR-043, FR-044) */}
+        <div className="flex gap-2 pb-4 border-b">
+          <button
+            type="button"
+            onClick={handleDetectDuplicates}
+            disabled={!title.trim() || detectDuplicatesMutation.isPending}
+            className="flex items-center gap-1 px-3 py-2 text-sm text-orange-700 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title={!title.trim() ? '제목을 입력해주세요' : 'AI로 중복 이슈 검사'}
+          >
+            <AlertCircle className="w-4 h-4" />
+            {detectDuplicatesMutation.isPending ? '검사 중...' : '🔍 중복 검사'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleRecommendLabels}
+            disabled={!title.trim() || recommendLabelsMutation.isPending || !labels || labels.length === 0}
+            className="flex items-center gap-1 px-3 py-2 text-sm text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title={!title.trim() ? '제목을 입력해주세요' : !labels || labels.length === 0 ? '프로젝트에 라벨이 없습니다' : 'AI로 라벨 추천받기'}
+          >
+            <Tag className="w-4 h-4" />
+            {recommendLabelsMutation.isPending ? '추천 중...' : '🏷️ AI 라벨 추천'}
+          </button>
+        </div>
+
+        {/* 중복 이슈 경고 (FR-044) */}
+        {duplicateIssues.length > 0 && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="flex items-start gap-2 mb-2">
+              <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-orange-900 mb-1">⚠️ 유사한 이슈가 발견되었습니다</h4>
+                <p className="text-sm text-orange-800 mb-3">이미 등록된 이슈와 중복될 수 있습니다. 확인 후 생성해주세요.</p>
+                <div className="space-y-2">
+                  {duplicateIssues.map((dup) => (
+                    <div key={dup.id} className="bg-white rounded p-2 border border-orange-200">
+                      <a
+                        href={`/teams/${teamId}/projects/${projectId}/issues/${dup.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {dup.title}
+                      </a>
+                      <p className="text-xs text-gray-600 mt-1">유사한 이유: {dup.similarity}</p>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDuplicateIssues([])}
+                  className="mt-3 text-xs text-orange-600 hover:text-orange-800 underline"
+                >
+                  경고 닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 우선순위 */}
         <div>

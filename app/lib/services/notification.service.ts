@@ -63,15 +63,30 @@ export const notificationService = {
     relatedId?: string
     relatedType?: string
   }) {
+    console.log('📬 [NotificationService] 알림 생성 시작')
+    console.log('   받는 사람 ID:', data.userId)
+    console.log('   알림 타입:', data.type)
+    console.log('   제목:', data.title)
+    console.log('   내용:', data.content)
+    console.log('   관련 ID:', data.relatedId)
+    console.log('   관련 타입:', data.relatedType)
+
     // title과 content를 합쳐서 message로 저장
     const message = data.title ? `${data.title}: ${data.content}` : data.content
 
-    return await notificationRepository.create({
-      user_id: data.userId,
-      type: data.type,
-      message: message,
-      reference_id: data.relatedId,
-      reference_type: data.relatedType
-    })
+    try {
+      const result = await notificationRepository.create({
+        user_id: data.userId,
+        type: data.type,
+        message: message,
+        reference_id: data.relatedId,
+        reference_type: data.relatedType
+      })
+      console.log('✅ [NotificationService] 알림 DB 저장 성공:', result.id)
+      return result
+    } catch (error) {
+      console.error('❌ [NotificationService] 알림 DB 저장 실패:', error)
+      throw error
+    }
   }
 }
