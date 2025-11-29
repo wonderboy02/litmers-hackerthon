@@ -9,7 +9,12 @@ import { useQuery } from '@tanstack/react-query'
 export function useKanbanData(projectId: string) {
   return useQuery({
     queryKey: ['kanban', projectId],
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0, // 즉시 stale로 설정하여 invalidate 시 바로 refetch
     queryFn: async () => {
+      console.log('🔵 칸반 데이터 페칭 시작:', projectId)
+
       // 1. 프로젝트 상태(컬럼) 조회
       const statesRes = await fetch(`/api/projects/${projectId}/states`)
       if (!statesRes.ok) throw new Error('상태 목록을 불러오는데 실패했습니다')
@@ -24,6 +29,9 @@ export function useKanbanData(projectId: string) {
       const states = Array.isArray(statesData) ? statesData : statesData.states || []
       const issues = Array.isArray(issuesData) ? issuesData : issuesData.issues || []
 
+      console.log('📊 조회된 상태 수:', states.length)
+      console.log('📋 조회된 이슈 수:', issues.length)
+
       // 3. 상태별로 이슈 그룹화
       const kanbanData = states.map((state: any) => ({
         ...state,
@@ -31,6 +39,8 @@ export function useKanbanData(projectId: string) {
           .filter((issue: any) => issue.state_id === state.id)
           .sort((a: any, b: any) => a.board_position - b.board_position)
       }))
+
+      console.log('✅ 칸반 데이터 페칭 완료:', kanbanData)
 
       return {
         states: kanbanData,

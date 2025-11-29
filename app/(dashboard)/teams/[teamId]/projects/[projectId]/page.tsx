@@ -179,7 +179,11 @@ export default function ProjectDetailPage() {
           {activeTab === 'kanban' ? (
             <KanbanBoard projectId={projectId} />
           ) : (
-            <IssueList projectId={projectId} issues={allIssues} />
+            <IssueList
+              projectId={projectId}
+              issues={allIssues}
+              onCreateClick={() => setIsCreateModalOpen(true)}
+            />
           )}
         </div>
       </div>

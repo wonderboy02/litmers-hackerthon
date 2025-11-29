@@ -57,23 +57,32 @@ export function useCreateIssue(projectId: string) {
 
   return useMutation({
     mutationFn: async (data: CreateIssueInput) => {
+      console.log('🚀 이슈 생성 요청:', data)
       const res = await fetch(`/api/projects/${projectId}/issues`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
+      console.log('📡 API 응답 상태:', res.status, res.ok)
       if (!res.ok) {
         const error = await res.json()
+        console.error('❌ API 에러:', error)
         throw new Error(error.message || '이슈 생성에 실패했습니다')
       }
-      return res.json()
+      const result = await res.json()
+      console.log('✅ 이슈 생성 성공:', result)
+      return result
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🎉 onSuccess 호출됨:', data)
+      console.log('🔄 캐시 무효화 시작...')
       queryClient.invalidateQueries({ queryKey: ['issues', projectId] })
       queryClient.invalidateQueries({ queryKey: ['kanban', projectId] })
+      console.log('✨ 토스트 표시...')
       toast.success('이슈가 생성되었습니다')
     },
     onError: (error: Error) => {
+      console.error('💥 onError 호출됨:', error)
       toast.error(error.message)
     }
   })

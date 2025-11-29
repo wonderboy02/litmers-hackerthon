@@ -66,30 +66,43 @@ export const dashboardService = {
       .limit(5)
 
     // 5. 소속 팀/프로젝트 목록
-    const { data: teams } = await supabase
+    const { data: teamMembers } = await supabase
       .from('team_members')
       .select(`
         role,
-        team:teams(
+        team_id,
+        teams!inner(
           id,
           name,
-          description,
-          projects(id, name)
+          description
         )
       `)
       .eq('user_id', userId)
 
-    // 각 팀의 멤버 수 조회
+    // 각 팀의 프로젝트와 멤버 수 조회
     const teamsWithMemberCount = await Promise.all(
-      (teams || []).map(async (t: any) => {
+      (teamMembers || []).map(async (tm: any) => {
+        const teamId = tm.teams.id
+
+        // 프로젝트 수 조회
+        const { data: projects } = await supabase
+          .from('projects')
+          .select('id, name')
+          .eq('team_id', teamId)
+          .is('deleted_at', null)
+
+        // 멤버 수 조회
         const { count } = await supabase
           .from('team_members')
           .select('*', { count: 'exact', head: true })
-          .eq('team_id', t.team.id)
+          .eq('team_id', teamId)
 
         return {
-          ...t.team,
-          role: t.role,
+          id: tm.teams.id,
+          name: tm.teams.name,
+          description: tm.teams.description,
+          role: tm.role,
+          projects: projects || [],
           memberCount: count || 0
         }
       })

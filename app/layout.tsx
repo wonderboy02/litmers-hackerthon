@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import QueryProvider from './providers/QueryProvider'
 import { AuthProvider } from './providers/AuthProvider'
+import { ToastProvider } from './providers/ToastProvider'
 
 export const metadata: Metadata = {
   title: 'Unlooped MVP',
@@ -19,6 +20,7 @@ export default function RootLayout({
         <AuthProvider>
           <QueryProvider>
             {children}
+            <ToastProvider />
           </QueryProvider>
         </AuthProvider>
       </body>

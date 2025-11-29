@@ -38,30 +38,35 @@ export function CreateIssueModal({
       return
     }
 
-    // dueDate를 ISO 8601 형식으로 변환
-    let dueDateISO: string | undefined = undefined
-    if (dueDate) {
-      // "2025-12-02" -> "2025-12-02T00:00:00.000Z"
-      dueDateISO = new Date(dueDate + 'T00:00:00.000Z').toISOString()
+    try {
+      // dueDate를 ISO 8601 형식으로 변환
+      let dueDateISO: string | undefined = undefined
+      if (dueDate) {
+        // "2025-12-02" -> "2025-12-02T00:00:00.000Z"
+        dueDateISO = new Date(dueDate + 'T00:00:00.000Z').toISOString()
+      }
+
+      await createIssueMutation.mutateAsync({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        priority,
+        assigneeUserId: assigneeId || undefined,
+        dueDate: dueDateISO,
+        labelIds: selectedLabels,
+      })
+
+      // 폼 초기화
+      setTitle('')
+      setDescription('')
+      setPriority('MEDIUM')
+      setAssigneeId('')
+      setDueDate('')
+      setSelectedLabels([])
+      onClose()
+    } catch (error) {
+      // 에러는 useCreateIssue의 onError에서 처리됨
+      console.error('이슈 생성 실패:', error)
     }
-
-    await createIssueMutation.mutateAsync({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      priority,
-      assigneeUserId: assigneeId || undefined,
-      dueDate: dueDateISO,
-      labelIds: selectedLabels,
-    })
-
-    // 폼 초기화
-    setTitle('')
-    setDescription('')
-    setPriority('MEDIUM')
-    setAssigneeId('')
-    setDueDate('')
-    setSelectedLabels([])
-    onClose()
   }
 
   const toggleLabel = (labelId: string) => {
@@ -88,12 +93,19 @@ export function CreateIssueModal({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              title.trim() ? 'border-gray-300' : 'border-red-300 bg-red-50'
+            }`}
             placeholder="이슈 제목을 입력하세요"
             maxLength={200}
             required
           />
-          <p className="text-xs text-gray-500 mt-1">{title.length}/200</p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-gray-500">{title.length}/200</p>
+            {!title.trim() && (
+              <p className="text-xs text-red-500">제목은 필수입니다</p>
+            )}
+          </div>
         </div>
 
         {/* 설명 */}
@@ -205,21 +217,44 @@ export function CreateIssueModal({
         )}
 
         {/* 버튼 */}
-        <div className="flex gap-3 pt-4 border-t">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={!title.trim() || createIssueMutation.isPending}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
-          >
-            {createIssueMutation.isPending ? '생성 중...' : '이슈 생성'}
-          </button>
+        <div className="flex flex-col gap-2 pt-4 border-t">
+          {!title.trim() && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <svg
+                className="w-4 h-4 text-yellow-600 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <p className="text-xs text-yellow-800">
+                제목을 입력해야 이슈를 생성할 수 있습니다.
+              </p>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              disabled={!title.trim() || createIssueMutation.isPending}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
+              title={!title.trim() ? '제목을 입력해주세요' : ''}
+            >
+              {createIssueMutation.isPending ? '생성 중...' : '이슈 생성'}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>

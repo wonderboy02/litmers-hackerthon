@@ -35,9 +35,10 @@ interface Issue {
 interface IssueListProps {
   projectId: string
   issues: Issue[]
+  onCreateClick?: () => void
 }
 
-export function IssueList({ projectId, issues }: IssueListProps) {
+export function IssueList({ projectId, issues, onCreateClick }: IssueListProps) {
   const params = useParams()
   const teamId = params.teamId as string
 
@@ -46,12 +47,12 @@ export function IssueList({ projectId, issues }: IssueListProps) {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <p className="text-gray-500 mb-4">아직 이슈가 없습니다.</p>
-          <Link
-            href={`/teams/${teamId}/projects/${projectId}/issues/new`}
-            className="text-blue-600 hover:text-blue-700 font-medium"
+          <button
+            onClick={onCreateClick}
+            className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
           >
             첫 이슈 만들기 →
-          </Link>
+          </button>
         </div>
       </div>
     )

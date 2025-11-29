@@ -1,16 +1,21 @@
-import { Resend } from 'resend'
-import {
-  sendTeamInvitationEmailViaGmail,
-  sendPasswordResetEmailViaGmail,
-} from './email-gmail'
+import nodemailer from 'nodemailer'
 
-if (!process.env.RESEND_API_KEY) {
-  console.warn('⚠️  RESEND_API_KEY is not set')
+/**
+ * Gmail SMTP Transporter
+ */
+const createGmailTransporter = () => {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    throw new Error('Gmail credentials not configured. Please set GMAIL_USER and GMAIL_APP_PASSWORD in .env.local')
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  })
 }
-
-export const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null
 
 /**
  * 비밀번호 재설정 이메일 발송
@@ -20,22 +25,13 @@ export async function sendPasswordResetEmail(
   resetToken: string,
   userName: string,
 ) {
-  // 개발 환경에서는 Gmail SMTP 사용
-  if (process.env.NODE_ENV === 'development' && process.env.GMAIL_USER) {
-    return await sendPasswordResetEmailViaGmail(to, resetToken, userName)
-  }
-
-  // 프로덕션 환경에서는 Resend 사용
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`
-
-  if (!resend) {
-    throw new Error('Email service not configured')
-  }
+  const transporter = createGmailTransporter()
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Unlooped <onboarding@resend.dev>',
-      to: [to],
+    const info = await transporter.sendMail({
+      from: `"Unlooped" <${process.env.GMAIL_USER}>`,
+      to: to,
       subject: '비밀번호 재설정 요청',
       html: `
         <!DOCTYPE html>
@@ -71,15 +67,14 @@ export async function sendPasswordResetEmail(
       `,
     })
 
-    if (error) {
-      console.error('Failed to send password reset email:', error)
-      throw new Error('이메일 발송에 실패했습니다.')
-    }
+    console.log('✅ [GMAIL] Password reset email sent:')
+    console.log(`   To: ${to}`)
+    console.log(`   Message ID: ${info.messageId}`)
 
-    return { success: true, data }
+    return { success: true, data: { id: info.messageId } }
   } catch (error) {
-    console.error('Email sending error:', error)
-    throw error
+    console.error('❌ [GMAIL] Failed to send password reset email:', error)
+    throw new Error('이메일 발송에 실패했습니다.')
   }
 }
 
@@ -92,22 +87,13 @@ export async function sendTeamInvitationEmail(
   inviterName: string,
   inviteToken: string,
 ) {
-  // 개발 환경에서는 Gmail SMTP 사용
-  if (process.env.NODE_ENV === 'development' && process.env.GMAIL_USER) {
-    return await sendTeamInvitationEmailViaGmail(to, teamName, inviterName, inviteToken)
-  }
-
-  // 프로덕션 환경에서는 Resend 사용
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invites/${inviteToken}`
-
-  if (!resend) {
-    throw new Error('Email service not configured')
-  }
+  const transporter = createGmailTransporter()
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Unlooped <onboarding@resend.dev>',
-      to: [to],
+    const info = await transporter.sendMail({
+      from: `"Unlooped" <${process.env.GMAIL_USER}>`,
+      to: to,
       subject: `${teamName} 팀에 초대되었습니다`,
       html: `
         <!DOCTYPE html>
@@ -147,14 +133,13 @@ export async function sendTeamInvitationEmail(
       `,
     })
 
-    if (error) {
-      console.error('Failed to send team invitation email:', error)
-      throw new Error('이메일 발송에 실패했습니다.')
-    }
+    console.log('✅ [GMAIL] Team invitation email sent:')
+    console.log(`   To: ${to}`)
+    console.log(`   Message ID: ${info.messageId}`)
 
-    return { success: true, data }
+    return { success: true, data: { id: info.messageId } }
   } catch (error) {
-    console.error('Email sending error:', error)
-    throw error
+    console.error('❌ [GMAIL] Failed to send team invitation email:', error)
+    throw new Error('이메일 발송에 실패했습니다.')
   }
 }
