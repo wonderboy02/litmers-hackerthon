@@ -8,7 +8,7 @@ export default function DashboardHomePage() {
 
   useEffect(() => {
     // 대시보드 홈은 개인 대시보드로 리다이렉트
-    router.replace('/dashboard/personal')
+    router.replace('/personal')
   }, [router])
 
   return null

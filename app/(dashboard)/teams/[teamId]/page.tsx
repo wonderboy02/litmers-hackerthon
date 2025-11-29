@@ -89,7 +89,7 @@ export default function TeamDetailPage() {
         ) : (
           <div className="grid grid-cols-3 gap-6">
             {projects?.map((project: any) => (
-              <Link href={`/dashboard/teams/${teamId}/projects/${project.id}`} key={project.id}>
+              <Link href={`/teams/${teamId}/projects/${project.id}`} key={project.id}>
                 <Card padding="md" hover>
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="font-semibold text-gray-900 text-lg">{project.name}</h3>

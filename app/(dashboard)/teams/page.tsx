@@ -54,7 +54,7 @@ export default function TeamsPage() {
       ) : (
         <div className="grid grid-cols-3 gap-6">
           {teams?.map((team: any) => (
-            <Link href={`/dashboard/teams/${team.id}`} key={team.id}>
+            <Link href={`/teams/${team.id}`} key={team.id}>
               <Card padding="md" hover>
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-semibold text-gray-900 text-lg">{team.name}</h3>

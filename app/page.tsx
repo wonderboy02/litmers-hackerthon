@@ -13,7 +13,7 @@ export default function Home() {
   useEffect(() => {
     // 로그인된 사용자는 대시보드로 리다이렉트
     if (!isLoading && user) {
-      router.replace('/dashboard')
+      router.replace('/personal')
     }
   }, [user, isLoading, router])
 

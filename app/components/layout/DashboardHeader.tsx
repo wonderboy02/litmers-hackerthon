@@ -20,19 +20,19 @@ export function DashboardHeader() {
         <div className="flex items-center justify-between h-16">
           {/* 로고 및 네비게이션 */}
           <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
+            <Link href="/personal" className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
               Unlooped
             </Link>
 
             <nav className="flex items-center gap-1">
               <Link
-                href="/dashboard/teams"
+                href="/teams"
                 className="text-sm text-gray-700 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 팀
               </Link>
               <Link
-                href="/dashboard/personal"
+                href="/personal"
                 className="text-sm text-gray-700 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 대시보드

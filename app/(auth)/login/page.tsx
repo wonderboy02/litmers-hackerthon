@@ -22,7 +22,7 @@ export default function LoginPage() {
 
     try {
       await loginMutation.mutateAsync(formData)
-      router.push('/dashboard')
+      router.push('/personal')
     } catch (err: any) {
       setError(err.message || '로그인에 실패했습니다')
     }
