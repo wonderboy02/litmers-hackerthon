@@ -63,13 +63,15 @@ export const notificationService = {
     relatedId?: string
     relatedType?: string
   }) {
+    // title과 content를 합쳐서 message로 저장
+    const message = data.title ? `${data.title}: ${data.content}` : data.content
+
     return await notificationRepository.create({
       user_id: data.userId,
       type: data.type,
-      title: data.title,
-      content: data.content,
-      related_id: data.relatedId,
-      related_type: data.relatedType
+      message: message,
+      reference_id: data.relatedId,
+      reference_type: data.relatedType
     })
   }
 }

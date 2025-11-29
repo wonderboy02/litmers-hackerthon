@@ -86,7 +86,7 @@ export const issueService = {
     // 이슈 생성
     const issue = await issueRepository.create({
       project_id: projectId,
-      owner_id: userId,
+      author_id: userId,
       state_id: defaultStateId,
       title: data.title,
       description: data.description,
@@ -496,8 +496,8 @@ export const issueService = {
   async canDeleteIssue(issue: any, userId: string): Promise<boolean> {
     const supabase = await createClient()
 
-    // 이슈 소유자
-    if (issue.owner_id === userId) {
+    // 이슈 작성자
+    if (issue.author_id === userId) {
       return true
     }
 

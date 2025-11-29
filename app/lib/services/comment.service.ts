@@ -29,11 +29,11 @@ export const commentService = {
       content
     })
 
-    // 알림 생성 (이슈 소유자와 담당자에게)
+    // 알림 생성 (이슈 작성자와 담당자에게)
     const notifyUserIds = new Set<string>()
 
-    if (issue.owner_id !== userId) {
-      notifyUserIds.add(issue.owner_id)
+    if (issue.author_id !== userId) {
+      notifyUserIds.add(issue.author_id)
     }
 
     if (issue.assignee_id && issue.assignee_id !== userId) {
@@ -146,14 +146,14 @@ export const commentService = {
       return true
     }
 
-    // 이슈 소유자
+    // 이슈 작성자
     const { data: issue } = await supabase
       .from('issues')
-      .select('owner_id, project_id')
+      .select('author_id, project_id')
       .eq('id', comment.issue_id)
       .single()
 
-    if (issue?.owner_id === userId) {
+    if (issue?.author_id === userId) {
       return true
     }
 
