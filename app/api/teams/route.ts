@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validated = createTeamSchema.parse(body)
 
-    const team = await teamService.createTeam(user.id, validated.name)
+    const team = await teamService.createTeam(user.id, validated.name, validated.description)
 
     return NextResponse.json({
       success: true,

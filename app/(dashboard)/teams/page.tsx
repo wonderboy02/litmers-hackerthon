@@ -52,34 +52,57 @@ export default function TeamsPage() {
           </Button>
         </Card>
       ) : (
-        <div className="grid grid-cols-3 gap-6">
-          {teams?.map((team: any) => (
-            <Link href={`/teams/${team.id}`} key={team.id}>
-              <Card padding="md" hover>
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-semibold text-gray-900 text-lg">{team.name}</h3>
-                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
-                    {team.role}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{team.description}</p>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>{team.projectCount || 0}개</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {teams?.map((team: any) => {
+            const projectCount = team.projectCount || 0
+            const memberCount = team.memberCount || 0
+
+            return (
+              <Link href={`/teams/${team.id}`} key={team.id}>
+                <Card padding="lg" hover className="h-full border-t-4 border-t-blue-500 transition-all duration-300 hover:shadow-lg flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-gray-900 mb-2">{team.name}</h3>
+                      <span className="text-xs font-medium px-3 py-1 bg-blue-100 text-blue-700 rounded-full inline-block">
+                        {team.role}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <span>{team.memberCount || 0}명</span>
+
+                  {/* Description */}
+                  <div className="flex-1 mb-4">
+                    {team.description ? (
+                      <p className="text-sm text-gray-600 leading-relaxed">{team.description}</p>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic">팀 설명이 없습니다.</p>
+                    )}
                   </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t border-gray-100">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{projectCount}</div>
+                      <div className="text-xs text-gray-500 mt-1">프로젝트</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{memberCount}</div>
+                      <div className="text-xs text-gray-500 mt-1">멤버</div>
+                    </div>
+                  </div>
+
+                  {/* Footer Icon */}
+                  <div className="flex justify-end pt-2">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            )
+          })}
         </div>
       )}
 

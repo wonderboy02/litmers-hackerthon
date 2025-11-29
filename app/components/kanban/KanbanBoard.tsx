@@ -98,9 +98,10 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
       </DragDropContext>
 
       {/* 안내 */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
+      <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-l-4 border-l-blue-500 border-y border-r border-blue-200 rounded-lg shadow-sm">
+        <p className="text-sm text-blue-900 font-medium">
           💡 <strong>Tip:</strong> 이슈를 드래그하여 다른 상태로 이동할 수 있습니다.
+          <br />
           WIP Limit을 초과하면 컬럼이 빨간색으로 표시됩니다.
         </p>
       </div>

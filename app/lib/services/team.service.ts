@@ -19,9 +19,10 @@ export const teamService = {
    * 2. 생성자를 OWNER로 추가
    * 3. 활동 로그 기록
    */
-  async createTeam(userId: string, name: string) {
+  async createTeam(userId: string, name: string, description?: string) {
     const team = await teamRepository.create({
       name,
+      description: description || null,
       owner_id: userId,
     })
 
@@ -44,7 +45,7 @@ export const teamService = {
    * FR-011: 팀 정보 수정
    * 권한: OWNER, ADMIN
    */
-  async updateTeam(teamId: string, userId: string, updates: { name: string }) {
+  async updateTeam(teamId: string, userId: string, updates: { name?: string; description?: string }) {
     await this.verifyPermission(teamId, userId, ['OWNER', 'ADMIN'])
 
     return await teamRepository.update(teamId, updates)

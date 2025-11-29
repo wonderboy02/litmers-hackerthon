@@ -59,22 +59,22 @@ export function IssueCard({ issue }: IssueCardProps) {
   const isOverdue = issue.due_date && new Date(issue.due_date) < new Date()
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing">
+    <div className="bg-white border-l-4 border-l-blue-500 rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing border border-gray-200">
       {/* 우선순위 및 라벨 */}
-      <div className="flex items-center gap-2 mb-2">
-        <span className={`text-xs px-2 py-0.5 rounded border ${getPriorityColor(issue.priority)}`}>
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${getPriorityColor(issue.priority)}`}>
           {getPriorityIcon(issue.priority)} {issue.priority}
         </span>
         {issue.labels && issue.labels.length > 0 && (
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
             {issue.labels.map((labelRel: any) => (
               <span
                 key={labelRel.label.id}
-                className="text-xs px-2 py-0.5 rounded"
+                className="text-xs font-medium px-2.5 py-1 rounded-full"
                 style={{
-                  backgroundColor: `${labelRel.label.color}20`,
+                  backgroundColor: `${labelRel.label.color}15`,
                   color: labelRel.label.color,
-                  border: `1px solid ${labelRel.label.color}40`
+                  border: `1.5px solid ${labelRel.label.color}40`
                 }}
               >
                 {labelRel.label.name}
@@ -85,41 +85,41 @@ export function IssueCard({ issue }: IssueCardProps) {
       </div>
 
       {/* 제목 */}
-      <h4 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+      <h4 className="text-sm font-semibold text-gray-900 mb-3 line-clamp-2 leading-snug">
         {issue.title}
       </h4>
 
       {/* 메타 정보 */}
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+      <div className="space-y-2 mb-3 text-xs text-gray-600">
         {/* 담당자 */}
         {issue.assignee && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {issue.assignee.profile_image ? (
               <img
                 src={issue.assignee.profile_image}
                 alt={issue.assignee.name}
-                className="w-5 h-5 rounded-full"
+                className="w-5 h-5 rounded-full object-cover"
               />
             ) : (
-              <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-xs font-medium text-white">
+              <div className="w-5 h-5 rounded-full bg-blue-400 flex items-center justify-center text-xs font-semibold text-white">
                 {issue.assignee.name.charAt(0).toUpperCase()}
               </div>
             )}
-            <span>{issue.assignee.name}</span>
+            <span className="font-medium">{issue.assignee.name}</span>
           </div>
         )}
 
         {/* 서브태스크 진행률 */}
         {totalSubtasks > 0 && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-md w-fit">
             <span className="text-xs">✅</span>
-            <span>{completedSubtasks}/{totalSubtasks}</span>
+            <span className="font-medium">{completedSubtasks}/{totalSubtasks}</span>
           </div>
         )}
 
         {/* 마감일 */}
         {issue.due_date && (
-          <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-medium' : isDueSoon ? 'text-orange-600' : ''}`}>
+          <div className={`flex items-center gap-2 px-2 py-1.5 rounded-md font-medium ${isOverdue ? 'bg-red-50 text-red-600' : isDueSoon ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-600'}`}>
             <span>📅</span>
             <span>{new Date(issue.due_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
           </div>
@@ -131,7 +131,7 @@ export function IssueCard({ issue }: IssueCardProps) {
         href={`/teams/${teamId}/projects/${projectId}/issues/${issue.id}`}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        className="block w-full text-center text-xs text-blue-600 hover:text-blue-800 py-1.5 border-t border-gray-100 hover:bg-blue-50 rounded-b transition-colors cursor-pointer"
+        className="block w-full text-center text-xs font-semibold text-blue-600 hover:text-blue-700 py-2 border-t border-gray-100 hover:bg-blue-50 rounded-b transition-colors cursor-pointer"
       >
         상세보기 →
       </Link>
