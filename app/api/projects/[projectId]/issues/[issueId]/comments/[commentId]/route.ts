@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { commentService } from '@/app/lib/services/comment.service'
 import { createErrorResponse } from '@/app/lib/errors'
-import { supabase } from '@/app/lib/supabase'
+import { createClient } from '@/app/lib/supabase/server'
 import { z } from 'zod'
 
 const updateCommentSchema = z.object({
@@ -17,6 +17,7 @@ export async function PATCH(
   { params }: { params: { projectId: string; issueId: string; commentId: string } }
 ) {
   try {
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -46,6 +47,7 @@ export async function DELETE(
   { params }: { params: { projectId: string; issueId: string; commentId: string } }
 ) {
   try {
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })

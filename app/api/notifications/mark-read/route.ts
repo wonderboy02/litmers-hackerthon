@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { notificationService } from '@/app/lib/services/notification.service'
 import { createErrorResponse } from '@/app/lib/errors'
-import { supabase } from '@/app/lib/supabase'
+import { createClient } from '@/app/lib/supabase/server'
 import { z } from 'zod'
 
 const markReadSchema = z.object({
@@ -15,6 +15,7 @@ const markReadSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })

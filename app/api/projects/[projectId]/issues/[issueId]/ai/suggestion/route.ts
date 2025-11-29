@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { aiService } from '@/app/lib/services/ai.service'
 import { createErrorResponse } from '@/app/lib/errors'
-import { supabase } from '@/app/lib/supabase'
+import { createClient } from '@/app/lib/supabase/server'
 
 /**
  * POST /api/projects/[projectId]/issues/[issueId]/ai/suggestion
@@ -12,6 +12,7 @@ export async function POST(
   { params }: { params: { projectId: string; issueId: string } }
 ) {
   try {
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })

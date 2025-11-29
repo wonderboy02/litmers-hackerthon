@@ -1,4 +1,4 @@
-import { createClient } from '@/app/lib/supabase/server'
+import { createClient } from '@/app/lib/supabase/client'
 import type { Database } from '@/types/supabase'
 
 type Project = Database['public']['Tables']['projects']['Row']

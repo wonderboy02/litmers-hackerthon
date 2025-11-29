@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { issueService } from '@/app/lib/services/issue.service'
 import { updateIssueSchema } from '@/app/lib/validators/issue.schema'
 import { createErrorResponse } from '@/app/lib/errors'
-import { supabase } from '@/app/lib/supabase'
+import { createClient } from '@/app/lib/supabase/server'
 
 /**
  * GET /api/projects/[projectId]/issues/[issueId]
@@ -13,6 +13,7 @@ export async function GET(
   { params }: { params: { projectId: string; issueId: string } }
 ) {
   try {
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -35,6 +36,7 @@ export async function PATCH(
   { params }: { params: { projectId: string; issueId: string } }
 ) {
   try {
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -64,6 +66,7 @@ export async function DELETE(
   { params }: { params: { projectId: string; issueId: string } }
 ) {
   try {
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })

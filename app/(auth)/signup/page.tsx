@@ -49,7 +49,7 @@ export default function SignupPage() {
         throw new Error(data.error || '회원가입에 실패했습니다')
       }
 
-      router.push('/auth/login')
+      router.push('/login')
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -122,7 +122,7 @@ export default function SignupPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             이미 계정이 있으신가요?{' '}
-            <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
               로그인
             </Link>
           </p>

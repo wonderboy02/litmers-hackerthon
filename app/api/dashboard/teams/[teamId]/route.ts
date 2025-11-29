@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { dashboardService } from '@/app/lib/services/dashboard.service'
 import { createErrorResponse } from '@/app/lib/errors'
-import { supabase } from '@/app/lib/supabase'
+import { createClient } from '@/app/lib/supabase/server'
 
 /**
  * GET /api/dashboard/teams/[teamId]?days=30
@@ -12,6 +12,7 @@ export async function GET(
   { params }: { params: { teamId: string } }
 ) {
   try {
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })

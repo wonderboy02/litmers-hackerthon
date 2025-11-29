@@ -1,4 +1,4 @@
-import { createClient } from '@/app/lib/supabase/server'
+import { createClient } from '@/app/lib/supabase/client'
 import { userRepository, passwordResetRepository } from '@/app/lib/repositories/user.repository'
 import { sendPasswordResetEmail } from '@/app/lib/email'
 import { AuthError, ValidationError, NotFoundError } from '@/app/lib/errors'

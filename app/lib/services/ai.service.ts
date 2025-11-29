@@ -1,4 +1,4 @@
-import { supabase } from '@/app/lib/supabase'
+import { supabase } from '@/app/lib/supabase/client'
 import { generateAIResponse } from '@/app/lib/ai'
 import { sha256 } from '@/app/lib/utils/hash'
 import { checkRateLimit } from '@/app/lib/rate-limit'
