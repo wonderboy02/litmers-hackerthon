@@ -302,4 +302,103 @@ export const teamService = {
 
     return data?.name || 'Admin'
   },
+
+  /**
+   * 초대 정보 조회 (토큰 기반)
+   * 초대 페이지에서 팀 정보를 표시하기 위해 사용
+   */
+  async getInvitationByToken(token: string) {
+    const invitation = await teamInvitationRepository.findValidToken(token)
+    
+    if (!invitation) {
+      throw new NotFoundError('초대를 찾을 수 없거나 만료되었습니다')
+    }
+
+    // 팀 정보 조회
+    const team = await teamRepository.findById(invitation.team_id)
+    if (!team) {
+      throw new NotFoundError('팀을 찾을 수 없습니다')
+    }
+
+    // 초대자 정보 조회
+    const inviterName = await this.getInviterName(invitation.inviter_id)
+
+    return {
+      invitation,
+      team,
+      inviterName,
+    }
+  },
+
+  /**
+   * FR-013: 초대 수락
+   * 1. 초대 유효성 검증 (만료, 존재 여부)
+   * 2. 이미 팀 멤버인지 확인
+   * 3. 사용자 이메일과 초대 이메일 일치 확인
+   * 4. team_members에 추가
+   * 5. 초대 레코드 삭제
+   * 6. 활동 로그 기록
+   * 7. 알림 생성
+   */
+  async acceptInvitation(token: string, userId: string) {
+    // 1. 초대 조회 및 검증
+    const invitation = await teamInvitationRepository.findValidToken(token)
+    
+    if (!invitation) {
+      throw new NotFoundError('초대를 찾을 수 없거나 만료되었습니다')
+    }
+
+    const { team_id: teamId, email: invitedEmail } = invitation
+
+    // 2. 팀 존재 확인
+    const team = await teamRepository.findById(teamId)
+    if (!team) {
+      throw new NotFoundError('팀을 찾을 수 없습니다')
+    }
+
+    // 3. 사용자 정보 조회 (이메일 확인용)
+    const supabase = await (await import('@/app/lib/supabase/server')).createClient()
+    const { data: user } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', userId)
+      .single()
+
+    if (!user) {
+      throw new NotFoundError('사용자를 찾을 수 없습니다')
+    }
+
+    // 4. 초대된 이메일과 현재 사용자 이메일 일치 확인
+    if (user.email !== invitedEmail) {
+      throw new ValidationError('초대된 이메일 주소와 일치하지 않습니다')
+    }
+
+    // 5. 이미 팀 멤버인지 확인
+    const existingMember = await teamMemberRepository.findMember(teamId, userId)
+    if (existingMember) {
+      // 이미 멤버이면 초대만 삭제하고 성공 반환
+      await teamInvitationRepository.delete(token)
+      return { success: true, alreadyMember: true }
+    }
+
+    // 6. 팀 멤버로 추가 (기본 역할: MEMBER)
+    await teamMemberRepository.create(teamId, userId, 'MEMBER')
+
+    // 7. 초대 레코드 삭제
+    await teamInvitationRepository.delete(token)
+
+    // 8. 활동 로그 기록
+    await teamActivityLogRepository.create({
+      teamId,
+      actorId: userId,
+      targetType: 'MEMBER',
+      targetId: userId,
+      actionType: 'JOINED',
+    })
+
+    // 9. 팀 오너에게 알림 (선택사항)
+    // TODO: 알림 서비스 구현 시 추가
+
+    return { success: true, alreadyMember: false, team }
+  },
 }

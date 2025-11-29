@@ -87,15 +87,7 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
   }
 
   return (
-    <div className="p-6">
-      {/* 헤더 */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">칸반 보드</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          전체 {kanbanData.totalIssues}개 이슈
-        </p>
-      </div>
-
+    <div>
       {/* 칸반 보드 */}
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4">

@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 export default function TeamsPage() {
   const { data: teams, isLoading } = useTeams()
-  const createMutation = useCreateTeam()
+  const createTeamMutation = useCreateTeam()
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [formData, setFormData] = useState({
@@ -18,7 +18,7 @@ export default function TeamsPage() {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault()
 
-    createMutation.mutate(formData, {
+    createTeamMutation.mutate(formData, {
       onSuccess: () => {
         setIsCreateModalOpen(false)
         setFormData({ name: '', description: '' })
@@ -117,7 +117,7 @@ export default function TeamsPage() {
             >
               취소
             </Button>
-            <Button type="submit" isLoading={createMutation.isPending}>
+            <Button type="submit" isLoading={createTeamMutation.isPending}>
               생성
             </Button>
           </div>

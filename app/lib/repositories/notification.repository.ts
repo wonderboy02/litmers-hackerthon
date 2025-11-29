@@ -13,6 +13,8 @@ export const notificationRepository = {
    * 알림 생성
    */
   async create(notification: NotificationInsert): Promise<Notification> {
+    const supabase = await createClient()
+
     const { data, error } = await supabase
       .from('notifications')
       .insert(notification)
@@ -27,6 +29,8 @@ export const notificationRepository = {
    * 사용자의 알림 조회
    */
   async findByUser(userId: string, limit = 50, offset = 0): Promise<Notification[]> {
+    const supabase = await createClient()
+
     const { data } = await supabase
       .from('notifications')
       .select('*')
@@ -41,6 +45,8 @@ export const notificationRepository = {
    * 사용자의 미읽은 알림 조회
    */
   async findUnreadByUser(userId: string): Promise<Notification[]> {
+    const supabase = await createClient()
+
     const { data } = await supabase
       .from('notifications')
       .select('*')
@@ -55,6 +61,8 @@ export const notificationRepository = {
    * 미읽은 알림 개수 조회
    */
   async countUnread(userId: string): Promise<number> {
+    const supabase = await createClient()
+
     const { count, error } = await supabase
       .from('notifications')
       .select('*', { count: 'exact', head: true })
@@ -69,6 +77,8 @@ export const notificationRepository = {
    * 알림 읽음 처리
    */
   async markAsRead(id: string): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('notifications')
       .update({
@@ -84,6 +94,8 @@ export const notificationRepository = {
    * 전체 읽음 처리
    */
   async markAllAsRead(userId: string): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('notifications')
       .update({
@@ -100,6 +112,8 @@ export const notificationRepository = {
    * 알림 삭제 (실제로는 사용하지 않음, Soft Delete 없음)
    */
   async delete(id: string): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('notifications')
       .delete()

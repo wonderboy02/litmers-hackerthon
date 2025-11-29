@@ -29,6 +29,8 @@ export const issueService = {
       labelIds?: string[]
     }
   ) {
+    const supabase = await createClient()
+
     // 프로젝트당 최대 200개 제한
     const count = await issueRepository.countByProject(projectId)
     if (count >= 200) {
@@ -156,6 +158,8 @@ export const issueService = {
       labelIds?: string[]
     }
   ) {
+    const supabase = await createClient()
+
     const issue = await issueRepository.findById(issueId)
     if (!issue) {
       throw new NotFoundError('이슈를 찾을 수 없습니다')
@@ -268,6 +272,8 @@ export const issueService = {
       nextItemPosition: number | null
     }
   ) {
+    const supabase = await createClient()
+
     const issue = await issueRepository.findById(issueId)
     if (!issue) {
       throw new NotFoundError('이슈를 찾을 수 없습니다')
@@ -406,6 +412,8 @@ export const issueService = {
     userId: string,
     updates: { title?: string; isCompleted?: boolean }
   ) {
+    const supabase = await createClient()
+
     const { data: subtask } = await supabase
       .from('subtasks')
       .select('issue_id')
@@ -430,6 +438,8 @@ export const issueService = {
    * 서브태스크 삭제
    */
   async deleteSubtask(subtaskId: string, userId: string) {
+    const supabase = await createClient()
+
     const { data: subtask } = await supabase
       .from('subtasks')
       .select('issue_id')
@@ -456,6 +466,8 @@ export const issueService = {
    * 팀 멤버십 확인
    */
   async verifyTeamMembership(projectId: string, userId: string) {
+    const supabase = await createClient()
+
     const { data: project } = await supabase
       .from('projects')
       .select('team_id')
@@ -482,6 +494,8 @@ export const issueService = {
    * 이슈 삭제 권한 확인
    */
   async canDeleteIssue(issue: any, userId: string): Promise<boolean> {
+    const supabase = await createClient()
+
     // 이슈 소유자
     if (issue.owner_id === userId) {
       return true

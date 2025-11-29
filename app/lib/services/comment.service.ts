@@ -111,6 +111,8 @@ export const commentService = {
    * 팀 멤버십 확인
    */
   async verifyTeamMembership(projectId: string, userId: string) {
+    const supabase = await createClient()
+
     const { data: project } = await supabase
       .from('projects')
       .select('team_id')
@@ -137,6 +139,8 @@ export const commentService = {
    * 댓글 삭제 권한 확인
    */
   async canDeleteComment(comment: any, userId: string): Promise<boolean> {
+    const supabase = await createClient()
+
     // 작성자
     if (comment.user_id === userId) {
       return true

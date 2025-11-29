@@ -13,12 +13,16 @@ export function useKanbanData(projectId: string) {
       // 1. 프로젝트 상태(컬럼) 조회
       const statesRes = await fetch(`/api/projects/${projectId}/states`)
       if (!statesRes.ok) throw new Error('상태 목록을 불러오는데 실패했습니다')
-      const states = await statesRes.json()
+      const statesData = await statesRes.json()
 
       // 2. 프로젝트의 모든 이슈 조회
       const issuesRes = await fetch(`/api/projects/${projectId}/issues`)
       if (!issuesRes.ok) throw new Error('이슈 목록을 불러오는데 실패했습니다')
-      const issues = await issuesRes.json()
+      const issuesData = await issuesRes.json()
+
+      // API 응답 구조: { states: [...] }, { issues: [...] } 또는 배열
+      const states = Array.isArray(statesData) ? statesData : statesData.states || []
+      const issues = Array.isArray(issuesData) ? issuesData : issuesData.issues || []
 
       // 3. 상태별로 이슈 그룹화
       const kanbanData = states.map((state: any) => ({
@@ -33,7 +37,6 @@ export function useKanbanData(projectId: string) {
         totalIssues: issues.length
       }
     },
-    enabled: !!projectId,
-    refetchInterval: 30000 // 30초마다 자동 갱신
+    enabled: !!projectId
   })
 }

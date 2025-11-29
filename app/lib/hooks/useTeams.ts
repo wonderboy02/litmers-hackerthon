@@ -17,10 +17,12 @@ type TeamActivityLog = Database['public']['Tables']['team_activity_logs']['Row']
 
 interface CreateTeamData {
   name: string
+  description?: string
 }
 
 interface UpdateTeamData {
   name: string
+  description?: string
 }
 
 interface InviteMemberData {
@@ -35,13 +37,10 @@ interface ChangeRoleData {
 
 /**
  * useTeams Hook
- * 팀 관리 관련 모든 기능을 제공하는 React Query Hook
+ * 사용자가 속한 팀 목록 조회
  */
 export function useTeams() {
-  const queryClient = useQueryClient()
-
-  // 사용자가 속한 팀 목록 조회
-  const { data: teams = [], isLoading } = useQuery<Team[]>({
+  return useQuery<Team[]>({
     queryKey: ['teams'],
     queryFn: async () => {
       const res = await fetch('/api/teams')
@@ -50,9 +49,16 @@ export function useTeams() {
       return data.teams
     },
   })
+}
 
-  // 팀 생성
-  const createTeamMutation = useMutation({
+/**
+ * useCreateTeam Hook
+ * 팀 생성 mutation
+ */
+export function useCreateTeam() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
     mutationFn: async (data: CreateTeamData) => {
       const res = await fetch('/api/teams', {
         method: 'POST',
@@ -75,9 +81,16 @@ export function useTeams() {
       toast.error(error.message)
     },
   })
+}
 
-  // 팀 정보 수정
-  const updateTeamMutation = useMutation({
+/**
+ * useUpdateTeam Hook
+ * 팀 정보 수정 mutation
+ */
+export function useUpdateTeam() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
     mutationFn: async ({ teamId, data }: { teamId: string; data: UpdateTeamData }) => {
       const res = await fetch(`/api/teams/${teamId}`, {
         method: 'PATCH',
@@ -92,17 +105,25 @@ export function useTeams() {
 
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: (_, { teamId }) => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
       toast.success('팀 정보가 수정되었습니다')
     },
     onError: (error: Error) => {
       toast.error(error.message)
     },
   })
+}
 
-  // 팀 삭제
-  const deleteTeamMutation = useMutation({
+/**
+ * useDeleteTeam Hook
+ * 팀 삭제 mutation
+ */
+export function useDeleteTeam() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
     mutationFn: async (teamId: string) => {
       const res = await fetch(`/api/teams/${teamId}`, {
         method: 'DELETE',
@@ -123,9 +144,14 @@ export function useTeams() {
       toast.error(error.message)
     },
   })
+}
 
-  // 멤버 초대
-  const inviteMemberMutation = useMutation({
+/**
+ * useInviteTeamMember Hook
+ * 팀 멤버 초대 mutation
+ */
+export function useInviteTeamMember() {
+  return useMutation({
     mutationFn: async ({ teamId, data }: { teamId: string; data: InviteMemberData }) => {
       const res = await fetch(`/api/teams/${teamId}/invite`, {
         method: 'POST',
@@ -147,9 +173,16 @@ export function useTeams() {
       toast.error(error.message)
     },
   })
+}
 
-  // 멤버 강제 퇴장
-  const kickMemberMutation = useMutation({
+/**
+ * useKickTeamMember Hook
+ * 팀 멤버 강제 퇴장 mutation
+ */
+export function useKickTeamMember() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
     mutationFn: async ({ teamId, userId }: { teamId: string; userId: string }) => {
       const res = await fetch(`/api/teams/${teamId}/members`, {
         method: 'DELETE',
@@ -172,9 +205,16 @@ export function useTeams() {
       toast.error(error.message)
     },
   })
+}
 
-  // 팀 탈퇴
-  const leaveTeamMutation = useMutation({
+/**
+ * useLeaveTeam Hook
+ * 팀 탈퇴 mutation
+ */
+export function useLeaveTeam() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
     mutationFn: async (teamId: string) => {
       const res = await fetch(`/api/teams/${teamId}/leave`, {
         method: 'POST',
@@ -195,9 +235,16 @@ export function useTeams() {
       toast.error(error.message)
     },
   })
+}
 
-  // 역할 변경
-  const changeRoleMutation = useMutation({
+/**
+ * useChangeTeamMemberRole Hook
+ * 팀 멤버 역할 변경 mutation
+ */
+export function useChangeTeamMemberRole() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
     mutationFn: async ({ teamId, data }: { teamId: string; data: ChangeRoleData }) => {
       const res = await fetch(`/api/teams/${teamId}/role`, {
         method: 'PATCH',
@@ -220,41 +267,6 @@ export function useTeams() {
       toast.error(error.message)
     },
   })
-
-  return {
-    // 상태
-    teams,
-    isLoading,
-
-    // Mutations
-    createTeam: createTeamMutation.mutate,
-    createTeamAsync: createTeamMutation.mutateAsync,
-    isCreatingTeam: createTeamMutation.isPending,
-
-    updateTeam: updateTeamMutation.mutate,
-    updateTeamAsync: updateTeamMutation.mutateAsync,
-    isUpdatingTeam: updateTeamMutation.isPending,
-
-    deleteTeam: deleteTeamMutation.mutate,
-    deleteTeamAsync: deleteTeamMutation.mutateAsync,
-    isDeletingTeam: deleteTeamMutation.isPending,
-
-    inviteMember: inviteMemberMutation.mutate,
-    inviteMemberAsync: inviteMemberMutation.mutateAsync,
-    isInvitingMember: inviteMemberMutation.isPending,
-
-    kickMember: kickMemberMutation.mutate,
-    kickMemberAsync: kickMemberMutation.mutateAsync,
-    isKickingMember: kickMemberMutation.isPending,
-
-    leaveTeam: leaveTeamMutation.mutate,
-    leaveTeamAsync: leaveTeamMutation.mutateAsync,
-    isLeavingTeam: leaveTeamMutation.isPending,
-
-    changeRole: changeRoleMutation.mutate,
-    changeRoleAsync: changeRoleMutation.mutateAsync,
-    isChangingRole: changeRoleMutation.isPending,
-  }
 }
 
 /**
@@ -276,6 +288,12 @@ export function useTeamDetails(teamId: string | null) {
     enabled: !!teamId,
   })
 }
+
+/**
+ * useTeam Hook
+ * useTeamDetails의 별칭 (더 짧고 직관적)
+ */
+export const useTeam = useTeamDetails
 
 /**
  * useTeamMembers Hook
@@ -314,5 +332,74 @@ export function useTeamActivityLogs(teamId: string | null, limit = 50) {
       return data.logs
     },
     enabled: !!teamId,
+  })
+}
+
+/**
+ * useInvitationDetails Hook
+ * 토큰으로 초대 정보 조회
+ */
+export function useInvitationDetails(token: string | null) {
+  return useQuery({
+    queryKey: ['invitation', token],
+    queryFn: async () => {
+      if (!token) return null
+
+      const res = await fetch(`/api/invites/${token}`)
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || '초대 정보 조회 실패')
+      }
+
+      return res.json()
+    },
+    enabled: !!token,
+  })
+}
+
+/**
+ * useAcceptInvitation Hook
+ * 초대 수락 mutation
+ */
+export function useAcceptInvitation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (token: string) => {
+      const res = await fetch(`/api/invites/${token}`, {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || '초대 수락 실패')
+      }
+
+      return res.json()
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      toast.success(data.message || '팀에 가입되었습니다')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    },
+  })
+}
+
+/**
+ * useMyInvitations Hook
+ * 현재 사용자에게 온 초대 목록 조회
+ */
+export function useMyInvitations() {
+  return useQuery({
+    queryKey: ['invitations', 'my'],
+    queryFn: async () => {
+      const res = await fetch('/api/invites')
+      if (!res.ok) throw new Error('초대 목록 조회 실패')
+
+      const data = await res.json()
+      return data.invitations
+    },
   })
 }

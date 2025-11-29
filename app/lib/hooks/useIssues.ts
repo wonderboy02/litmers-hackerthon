@@ -70,6 +70,7 @@ export function useCreateIssue(projectId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['kanban', projectId] })
       toast.success('이슈가 생성되었습니다')
     },
     onError: (error: Error) => {
@@ -100,6 +101,7 @@ export function useUpdateIssue(projectId: string, issueId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues', issueId] })
       queryClient.invalidateQueries({ queryKey: ['issues', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['kanban', projectId] })
       toast.success('이슈가 수정되었습니다')
     },
     onError: (error: Error) => {
@@ -154,6 +156,7 @@ export function useMoveIssue(projectId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['kanban', projectId] })
     }
   })
 }
@@ -177,6 +180,7 @@ export function useDeleteIssue(projectId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['kanban', projectId] })
       toast.success('이슈가 삭제되었습니다')
     },
     onError: (error: Error) => {

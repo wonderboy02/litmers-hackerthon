@@ -16,6 +16,8 @@ export const issueRepository = {
    * ID로 이슈 조회
    */
   async findById(id: string): Promise<Issue | null> {
+    const supabase = await createClient()
+
     const { data } = await supabase
       .from('issues')
       .select(`
@@ -35,6 +37,8 @@ export const issueRepository = {
    * 프로젝트의 모든 이슈 조회 (칸반 보드용)
    */
   async findByProject(projectId: string): Promise<Issue[]> {
+    const supabase = await createClient()
+
     const { data } = await supabase
       .from('issues')
       .select(`
@@ -57,6 +61,8 @@ export const issueRepository = {
    * 특정 상태의 이슈들 조회
    */
   async findByState(stateId: string): Promise<Issue[]> {
+    const supabase = await createClient()
+
     const { data } = await supabase
       .from('issues')
       .select(`
@@ -74,6 +80,8 @@ export const issueRepository = {
    * 담당자의 이슈 조회
    */
   async findByAssignee(assigneeId: string): Promise<Issue[]> {
+    const supabase = await createClient()
+
     const { data } = await supabase
       .from('issues')
       .select(`
@@ -92,6 +100,8 @@ export const issueRepository = {
    * 이슈 생성
    */
   async create(issue: IssueInsert): Promise<Issue> {
+    const supabase = await createClient()
+
     const { data, error } = await supabase
       .from('issues')
       .insert(issue)
@@ -106,6 +116,8 @@ export const issueRepository = {
    * 이슈 수정
    */
   async update(id: string, updates: IssueUpdate): Promise<Issue> {
+    const supabase = await createClient()
+
     const { data, error } = await supabase
       .from('issues')
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -121,6 +133,8 @@ export const issueRepository = {
    * 이슈 이동 (상태 변경 + position 변경)
    */
   async move(id: string, newStateId: string, newPosition: number): Promise<Issue> {
+    const supabase = await createClient()
+
     const { data, error } = await supabase
       .from('issues')
       .update({
@@ -140,6 +154,8 @@ export const issueRepository = {
    * Soft Delete
    */
   async softDelete(id: string): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('issues')
       .update({ deleted_at: new Date().toISOString() })
@@ -152,6 +168,8 @@ export const issueRepository = {
    * 프로젝트의 이슈 개수 조회 (제한 체크용)
    */
   async countByProject(projectId: string): Promise<number> {
+    const supabase = await createClient()
+
     const { count, error } = await supabase
       .from('issues')
       .select('*', { count: 'exact', head: true })
@@ -176,6 +194,8 @@ export const issueRepository = {
     dueDateFrom?: string
     dueDateTo?: string
   }): Promise<Issue[]> {
+    const supabase = await createClient()
+
     let query = supabase
       .from('issues')
       .select(`
@@ -247,6 +267,8 @@ export const issueHistoryRepository = {
     oldValue: string | null
     newValue: string | null
   }): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('issue_histories')
       .insert({
@@ -264,6 +286,8 @@ export const issueHistoryRepository = {
    * 이슈의 히스토리 조회
    */
   async findByIssue(issueId: string, limit = 50): Promise<IssueHistory[]> {
+    const supabase = await createClient()
+
     const { data } = await supabase
       .from('issue_histories')
       .select(`
@@ -291,6 +315,8 @@ export const subtaskRepository = {
     title: string
     position: number
   }): Promise<Subtask> {
+    const supabase = await createClient()
+
     const { data, error } = await supabase
       .from('subtasks')
       .insert({
@@ -309,6 +335,8 @@ export const subtaskRepository = {
    * 이슈의 서브태스크 조회
    */
   async findByIssue(issueId: string): Promise<Subtask[]> {
+    const supabase = await createClient()
+
     const { data } = await supabase
       .from('subtasks')
       .select('*')
@@ -325,6 +353,8 @@ export const subtaskRepository = {
     title?: string
     isCompleted?: boolean
   }): Promise<Subtask> {
+    const supabase = await createClient()
+
     const { data, error } = await supabase
       .from('subtasks')
       .update({
@@ -344,6 +374,8 @@ export const subtaskRepository = {
    * 서브태스크 삭제
    */
   async delete(id: string): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('subtasks')
       .delete()
@@ -356,6 +388,8 @@ export const subtaskRepository = {
    * 이슈의 서브태스크 개수 조회 (제한 체크용)
    */
   async countByIssue(issueId: string): Promise<number> {
+    const supabase = await createClient()
+
     const { count, error } = await supabase
       .from('subtasks')
       .select('*', { count: 'exact', head: true })
@@ -369,6 +403,8 @@ export const subtaskRepository = {
    * 서브태스크 순서 변경
    */
   async updatePosition(id: string, newPosition: number): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('subtasks')
       .update({ position: newPosition })
@@ -387,6 +423,8 @@ export const issueLabelRepository = {
    * 이슈에 라벨 추가
    */
   async addLabel(issueId: string, labelId: string): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('issue_labels')
       .insert({ issue_id: issueId, label_id: labelId })
@@ -398,6 +436,8 @@ export const issueLabelRepository = {
    * 이슈에서 라벨 제거
    */
   async removeLabel(issueId: string, labelId: string): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('issue_labels')
       .delete()
@@ -411,6 +451,8 @@ export const issueLabelRepository = {
    * 이슈의 모든 라벨 제거
    */
   async removeAllLabels(issueId: string): Promise<void> {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('issue_labels')
       .delete()
@@ -423,6 +465,8 @@ export const issueLabelRepository = {
    * 이슈의 라벨 개수 조회 (제한 체크용)
    */
   async countByIssue(issueId: string): Promise<number> {
+    const supabase = await createClient()
+
     const { count, error } = await supabase
       .from('issue_labels')
       .select('*', { count: 'exact', head: true })

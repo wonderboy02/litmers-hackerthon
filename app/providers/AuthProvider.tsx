@@ -70,23 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data;
   };
 
-  // 소셜 로그인 프로필 사진 자동 저장
-  const syncSocialAvatar = async (authUser: User, profile: Tables<'users'> | null) => {
-    // 소셜 로그인에서 제공하는 프로필 사진 URL
-    const socialAvatarUrl = authUser.user_metadata?.avatar_url;
-
-    // 이미 avatar_url이 있으면 패스
-    if (profile?.avatar_url || !socialAvatarUrl) {
-      return;
-    }
-
-    // users 테이블에 소셜 프로필 사진 저장
-    await supabase
-      .from('users')
-      .update({ avatar_url: socialAvatarUrl })
-      .eq('id', authUser.id);
-  };
-
   useEffect(() => {
     // 초기 세션 확인
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -97,15 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         const profile = await fetchUserProfile(session.user);
 
-        // 소셜 로그인 프로필 사진 자동 저장
-        await syncSocialAvatar(session.user, profile);
-
-        // 프로필 사진 동기화 후 다시 가져오기
-        const updatedProfile = await fetchUserProfile(session.user);
-
         setUserProfile({
           ...session.user,
-          profile: updatedProfile,
+          profile,
         });
       } else {
         setUserProfile(null);
@@ -125,15 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         const profile = await fetchUserProfile(session.user);
 
-        // 소셜 로그인 프로필 사진 자동 저장
-        await syncSocialAvatar(session.user, profile);
-
-        // 프로필 사진 동기화 후 다시 가져오기
-        const updatedProfile = await fetchUserProfile(session.user);
-
         setUserProfile({
           ...session.user,
-          profile: updatedProfile,
+          profile,
         });
       } else {
         setUserProfile(null);

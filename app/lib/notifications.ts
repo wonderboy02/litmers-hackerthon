@@ -135,3 +135,19 @@ export function getNotificationIcon(
       return { icon: '🔔', color: 'text-gray-600' }
   }
 }
+
+/**
+ * 알림 생성 헬퍼 함수
+ * Service 레이어에서 알림을 간편하게 생성할 수 있도록 돕는 함수
+ */
+export async function createNotification(data: {
+  userId: string
+  type: string
+  title: string
+  content: string
+  relatedId?: string
+  relatedType?: string
+}) {
+  const { notificationService } = await import('@/app/lib/services/notification.service')
+  return await notificationService.createNotification(data)
+}

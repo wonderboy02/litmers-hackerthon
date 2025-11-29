@@ -11,6 +11,8 @@ export const dashboardService = {
    * FR-081: 개인 대시보드
    */
   async getPersonalDashboard(userId: string) {
+    const supabase = await createClient()
+
     // 1. 내가 담당한 이슈 (상태별 분류)
     const { data: myIssues } = await supabase
       .from('issues')
@@ -67,13 +69,31 @@ export const dashboardService = {
     const { data: teams } = await supabase
       .from('team_members')
       .select(`
+        role,
         team:teams(
           id,
           name,
+          description,
           projects(id, name)
         )
       `)
       .eq('user_id', userId)
+
+    // 각 팀의 멤버 수 조회
+    const teamsWithMemberCount = await Promise.all(
+      (teams || []).map(async (t: any) => {
+        const { count } = await supabase
+          .from('team_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('team_id', t.team.id)
+
+        return {
+          ...t.team,
+          role: t.role,
+          memberCount: count || 0
+        }
+      })
+    )
 
     return {
       totalIssues: issues.length,
@@ -81,7 +101,7 @@ export const dashboardService = {
       dueSoonIssues,
       dueTodayIssues,
       recentComments: recentComments || [],
-      teams: teams?.map((t: any) => t.team) || []
+      teams: teamsWithMemberCount
     }
   },
 
@@ -89,6 +109,8 @@ export const dashboardService = {
    * FR-080: 프로젝트 대시보드
    */
   async getProjectDashboard(projectId: string, userId: string) {
+    const supabase = await createClient()
+
     // 팀 멤버십 확인
     await this.verifyTeamMembership(projectId, userId)
 
@@ -179,6 +201,8 @@ export const dashboardService = {
    * FR-082: 팀 통계
    */
   async getTeamStatistics(teamId: string, userId: string, days: number = 30) {
+    const supabase = await createClient()
+
     // 팀 멤버십 확인
     const { count } = await supabase
       .from('team_members')
@@ -357,6 +381,8 @@ export const dashboardService = {
    * 팀 멤버십 확인
    */
   async verifyTeamMembership(projectId: string, userId: string) {
+    const supabase = await createClient()
+
     const { data: project } = await supabase
       .from('projects')
       .select('team_id')

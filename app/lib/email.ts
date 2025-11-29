@@ -1,10 +1,16 @@
 import { Resend } from 'resend'
+import {
+  sendTeamInvitationEmailViaGmail,
+  sendPasswordResetEmailViaGmail,
+} from './email-gmail'
 
 if (!process.env.RESEND_API_KEY) {
-  throw new Error('RESEND_API_KEY is not set')
+  console.warn('⚠️  RESEND_API_KEY is not set')
 }
 
-export const resend = new Resend(process.env.RESEND_API_KEY)
+export const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null
 
 /**
  * 비밀번호 재설정 이메일 발송
@@ -14,11 +20,21 @@ export async function sendPasswordResetEmail(
   resetToken: string,
   userName: string,
 ) {
+  // 개발 환경에서는 Gmail SMTP 사용
+  if (process.env.NODE_ENV === 'development' && process.env.GMAIL_USER) {
+    return await sendPasswordResetEmailViaGmail(to, resetToken, userName)
+  }
+
+  // 프로덕션 환경에서는 Resend 사용
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`
+
+  if (!resend) {
+    throw new Error('Email service not configured')
+  }
 
   try {
     const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Unlooped <noreply@unlooped.app>',
+      from: process.env.EMAIL_FROM || 'Unlooped <onboarding@resend.dev>',
       to: [to],
       subject: '비밀번호 재설정 요청',
       html: `
@@ -76,11 +92,21 @@ export async function sendTeamInvitationEmail(
   inviterName: string,
   inviteToken: string,
 ) {
+  // 개발 환경에서는 Gmail SMTP 사용
+  if (process.env.NODE_ENV === 'development' && process.env.GMAIL_USER) {
+    return await sendTeamInvitationEmailViaGmail(to, teamName, inviterName, inviteToken)
+  }
+
+  // 프로덕션 환경에서는 Resend 사용
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invites/${inviteToken}`
+
+  if (!resend) {
+    throw new Error('Email service not configured')
+  }
 
   try {
     const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Unlooped <noreply@unlooped.app>',
+      from: process.env.EMAIL_FROM || 'Unlooped <onboarding@resend.dev>',
       to: [to],
       subject: `${teamName} 팀에 초대되었습니다`,
       html: `

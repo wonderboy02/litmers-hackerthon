@@ -13,6 +13,8 @@ export const aiService = {
    * FR-040: 설명 요약 생성
    */
   async generateSummary(issueId: string, userId: string): Promise<string> {
+    const supabase = await createClient()
+
     // Rate Limiting
     await checkRateLimit(userId, 'ai')
 
@@ -54,6 +56,8 @@ export const aiService = {
    * FR-041: 해결 전략 제안
    */
   async generateSuggestion(issueId: string, userId: string): Promise<string> {
+    const supabase = await createClient()
+
     await checkRateLimit(userId, 'ai')
 
     const { data: issue } = await supabase
@@ -102,6 +106,8 @@ export const aiService = {
     userId: string,
     projectLabels: Array<{ id: string; name: string }>
   ): Promise<string[]> {
+    const supabase = await createClient()
+
     await checkRateLimit(userId, 'ai')
 
     const { data: issue } = await supabase
@@ -154,6 +160,8 @@ export const aiService = {
     newIssueTitle: string,
     newIssueDescription?: string
   ): Promise<Array<{ id: string; title: string; similarity: string }>> {
+    const supabase = await createClient()
+
     await checkRateLimit(userId, 'ai')
 
     // 프로젝트의 기존 이슈 조회
@@ -220,6 +228,8 @@ ID: [이슈ID], 유사도: [HIGH/MEDIUM/LOW]
    * FR-045: AI 댓글 요약
    */
   async summarizeComments(issueId: string, userId: string): Promise<string> {
+    const supabase = await createClient()
+
     await checkRateLimit(userId, 'ai')
 
     // 댓글 조회
@@ -274,6 +284,8 @@ ${commentTexts}
     featureType: 'SUMMARY' | 'SUGGESTION' | 'COMMENT_SUMMARY',
     inputHash: string
   ) {
+    const supabase = await createClient()
+
     const { data } = await supabase
       .from('ai_caches')
       .select('*')
@@ -295,6 +307,8 @@ ${commentTexts}
     inputHash: string,
     outputText: string
   ) {
+    const supabase = await createClient()
+
     const { error } = await supabase
       .from('ai_caches')
       .upsert({

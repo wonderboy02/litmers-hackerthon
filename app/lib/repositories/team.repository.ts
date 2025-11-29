@@ -36,21 +36,53 @@ export const teamRepository = {
 
   /**
    * 사용자가 속한 팀 목록 조회
+   * 멤버 수, 프로젝트 수, 사용자의 역할 포함
    */
-  async findByUserId(userId: string): Promise<Team[]> {
+  async findByUserId(userId: string): Promise<any[]> {
     const supabase = await createClient()
 
-    const { data, error} = await supabase
+    // 1. 사용자가 속한 팀 목록 조회
+    const { data: teams, error } = await supabase
       .from('teams')
       .select(`
         *,
-        team_members!inner(user_id)
+        team_members!inner(user_id, role)
       `)
       .eq('team_members.user_id', userId)
       .is('deleted_at', null)
 
     if (error) throw error
-    return data || []
+    if (!teams) return []
+
+    // 2. 각 팀의 멤버 수와 프로젝트 수 조회
+    const teamsWithCounts = await Promise.all(
+      teams.map(async (team) => {
+        // 멤버 수 조회
+        const { count: memberCount } = await supabase
+          .from('team_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('team_id', team.id)
+
+        // 프로젝트 수 조회 (삭제되지 않은 것만)
+        const { count: projectCount } = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true })
+          .eq('team_id', team.id)
+          .is('deleted_at', null)
+
+        // 현재 사용자의 역할 찾기
+        const userRole = (team as any).team_members?.[0]?.role || 'MEMBER'
+
+        return {
+          ...team,
+          memberCount: memberCount || 0,
+          projectCount: projectCount || 0,
+          role: userRole,
+        }
+      })
+    )
+
+    return teamsWithCounts
   },
 
   /**
