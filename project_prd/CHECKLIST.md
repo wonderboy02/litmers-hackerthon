@@ -10,8 +10,8 @@
 | Phase | 주제 | 예상 시간 | 상태 | 진행률 |
 |-------|------|-----------|------|--------|
 | Phase 0 | DB 스키마 적용 | 15분 | ⬜ 대기 | 0% |
-| Phase 1 | 인증 시스템 | 1시간 | ⬜ 대기 | 0% |
-| Phase 2 | 팀 관리 | 1시간 | ⬜ 대기 | 0% |
+| Phase 1 | 인증 시스템 | 1시간 | 🟢 진행중 | 85% |
+| Phase 2 | 팀 관리 | 1시간 | 🟡 진행중 | 60% |
 | Phase 3 | 프로젝트 관리 | 45분 | ⬜ 대기 | 0% |
 | Phase 4 | 이슈 기본 CRUD | 1시간 | ⬜ 대기 | 0% |
 | Phase 5 | 칸반 보드 | 1시간 | ⬜ 대기 | 0% |
@@ -21,7 +21,7 @@
 | Phase 9 | 알림 시스템 | 30분 | ⬜ 대기 | 0% |
 | Phase 10 | 배포 | 30분 | ⬜ 대기 | 0% |
 
-**전체 진행률**: 0/11 Phase 완료 (0%)
+**전체 진행률**: 1.5/11 Phase 완료 (14%)
 
 ---
 
@@ -50,58 +50,65 @@
 ### 목표
 - FR-001~FR-007 구현 (회원가입, 로그인, OAuth, 프로필 관리)
 
-### 1-1. Zod 스키마 작성 (10분)
-- [ ] `app/lib/validators/` 폴더 생성
-- [ ] `app/lib/validators/auth.schema.ts` 작성
-  - [ ] signupSchema
-  - [ ] loginSchema
-  - [ ] resetPasswordRequestSchema
-  - [ ] resetPasswordSchema
-  - [ ] updateProfileSchema
-  - [ ] changePasswordSchema
+### 1-1. Zod 스키마 작성 (10분) ✅
+- [x] `app/lib/validators/` 폴더 생성
+- [x] `app/lib/validators/auth.schema.ts` 작성
+  - [x] signupSchema
+  - [x] loginSchema
+  - [x] resetPasswordRequestSchema
+  - [x] resetPasswordSchema
+  - [x] updateProfileSchema
+  - [x] changePasswordSchema
 
-### 1-2. Repository 레이어 (15분)
-- [ ] `app/lib/repositories/` 폴더 생성
-- [ ] `app/lib/repositories/user.repository.ts` 작성
-  - [ ] findById
-  - [ ] findByEmail
-  - [ ] findByGoogleId
-  - [ ] create
-  - [ ] update
-  - [ ] softDelete
-- [ ] passwordResetRepository 작성
-  - [ ] create
-  - [ ] findValidToken
-  - [ ] deleteToken
+### 1-2. Repository 레이어 (15분) ✅
+- [x] `app/lib/repositories/` 폴더 생성
+- [x] `app/lib/repositories/user.repository.ts` 작성
+  - [x] findById
+  - [x] findByEmail
+  - [x] findByGoogleId
+  - [x] create
+  - [x] update
+  - [x] softDelete
+- [x] passwordResetRepository 작성
+  - [x] create
+  - [x] findValidToken
+  - [x] deleteToken
 
-### 1-3. Service 레이어 (20분)
-- [ ] `app/lib/services/` 폴더 생성
-- [ ] `app/lib/services/auth.service.ts` 작성
-  - [ ] signup (FR-001)
-  - [ ] login (FR-002)
-  - [ ] logout (FR-002)
-  - [ ] requestPasswordReset (FR-003)
-  - [ ] resetPassword (FR-003)
-  - [ ] updateProfile (FR-005)
-  - [ ] changePassword (FR-006)
-  - [ ] deleteAccount (FR-007)
-  - [ ] getCurrentUser
+### 1-3. Service 레이어 (20분) ✅
+- [x] `app/lib/services/` 폴더 생성
+- [x] `app/lib/services/auth.service.ts` 작성
+  - [x] signup (FR-001)
+  - [x] login (FR-002)
+  - [x] logout (FR-002)
+  - [x] requestPasswordReset (FR-003)
+  - [x] resetPassword (FR-003)
+  - [x] updateProfile (FR-005)
+  - [x] changePassword (FR-006)
+  - [x] deleteAccount (FR-007)
+  - [x] getCurrentUser
 
-### 1-4. API Routes (10분)
-- [ ] `app/api/auth/signup/route.ts`
-- [ ] `app/api/auth/login/route.ts`
-- [ ] `app/api/auth/logout/route.ts`
-- [ ] `app/api/auth/reset-password/route.ts`
-- [ ] `app/api/auth/profile/route.ts`
-- [ ] `app/api/auth/me/route.ts`
+### 1-4. API Routes (10분) ✅
+- [x] `app/api/auth/signup/route.ts`
+- [x] `app/api/auth/login/route.ts`
+- [x] `app/api/auth/logout/route.ts`
+- [x] `app/api/auth/reset-password/route.ts`
+- [x] `app/api/auth/profile/route.ts`
+- [x] `app/api/auth/me/route.ts`
+- [x] `app/api/auth/change-password/route.ts`
+- [x] `app/api/auth/delete-account/route.ts`
 
-### 1-5. React Query Hooks (5분)
-- [ ] `app/lib/hooks/` 폴더 생성
-- [ ] `app/lib/hooks/useAuth.ts` 작성
-  - [ ] useAuth hook
-  - [ ] loginMutation
-  - [ ] signupMutation
-  - [ ] logoutMutation
+### 1-5. React Query Hooks (5분) ✅
+- [x] `app/lib/hooks/` 폴더 생성
+- [x] `app/lib/hooks/useAuth.ts` 작성
+  - [x] useAuth hook
+  - [x] loginMutation
+  - [x] signupMutation
+  - [x] logoutMutation
+  - [x] requestPasswordResetMutation
+  - [x] resetPasswordMutation
+  - [x] updateProfileMutation
+  - [x] changePasswordMutation
+  - [x] deleteAccountMutation
 
 ### 1-6. UI 컴포넌트 (10분)
 - [ ] `app/(auth)/` 라우트 그룹 생성
@@ -121,33 +128,33 @@
 ### 목표
 - FR-010~FR-019 구현 (팀 CRUD, 멤버 관리, 초대 시스템)
 
-### 2-1. Zod 스키마 (5분)
-- [ ] `app/lib/validators/team.schema.ts` 작성
-  - [ ] createTeamSchema
-  - [ ] updateTeamSchema
-  - [ ] inviteMemberSchema
-  - [ ] changeRoleSchema
+### 2-1. Zod 스키마 (5분) ✅
+- [x] `app/lib/validators/team.schema.ts` 작성
+  - [x] createTeamSchema
+  - [x] updateTeamSchema
+  - [x] inviteMemberSchema
+  - [x] changeRoleSchema
 
-### 2-2. Repository 레이어 (10분)
-- [ ] `app/lib/repositories/team.repository.ts` 작성
-  - [ ] teamRepository (findById, findByUserId, create, update, softDelete)
-  - [ ] teamMemberRepository (findMember, findMembers, create, updateRole, remove)
-  - [ ] teamInvitationRepository (create, findValidToken, findPending, updateExpiry, delete)
-  - [ ] teamActivityLogRepository (create, findByTeam)
+### 2-2. Repository 레이어 (10분) ✅
+- [x] `app/lib/repositories/team.repository.ts` 작성
+  - [x] teamRepository (findById, findByUserId, create, update, softDelete)
+  - [x] teamMemberRepository (findMember, findMembers, create, updateRole, remove)
+  - [x] teamInvitationRepository (create, findValidToken, findPending, updateExpiry, delete)
+  - [x] teamActivityLogRepository (create, findByTeam)
 
-### 2-3. Service 레이어 (20분)
-- [ ] `app/lib/services/team.service.ts` 작성
-  - [ ] createTeam (FR-010)
-  - [ ] updateTeam (FR-011)
-  - [ ] deleteTeam (FR-012)
-  - [ ] inviteMember (FR-013)
-  - [ ] getMembers (FR-014)
-  - [ ] kickMember (FR-015)
-  - [ ] leaveTeam (FR-016)
-  - [ ] changeRole (FR-018)
-  - [ ] getActivityLogs (FR-019)
-  - [ ] verifyPermission
-  - [ ] verifyMembership
+### 2-3. Service 레이어 (20분) ✅
+- [x] `app/lib/services/team.service.ts` 작성
+  - [x] createTeam (FR-010)
+  - [x] updateTeam (FR-011)
+  - [x] deleteTeam (FR-012)
+  - [x] inviteMember (FR-013)
+  - [x] getMembers (FR-014)
+  - [x] kickMember (FR-015)
+  - [x] leaveTeam (FR-016)
+  - [x] changeRole (FR-018)
+  - [x] getActivityLogs (FR-019)
+  - [x] verifyPermission
+  - [x] verifyMembership
 
 ### 2-4. API Routes (10분)
 - [ ] `app/api/teams/route.ts` (POST, GET)

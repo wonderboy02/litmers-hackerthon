@@ -1,0 +1,31 @@
+import { NextRequest } from 'next/server'
+import { notificationService } from '@/app/lib/services/notification.service'
+import { createErrorResponse } from '@/app/lib/errors'
+import { supabase } from '@/app/lib/supabase'
+
+/**
+ * GET /api/notifications?limit=50&offset=0
+ * FR-090: 알림 조회
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const offset = parseInt(searchParams.get('offset') || '0')
+
+    const notifications = await notificationService.getNotifications(
+      user.id,
+      limit,
+      offset
+    )
+
+    return Response.json(notifications)
+  } catch (error) {
+    return createErrorResponse(error)
+  }
+}
