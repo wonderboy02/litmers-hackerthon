@@ -2,13 +2,16 @@
 
 import { useParams } from 'next/navigation'
 import { useIssue, useUpdateIssue } from '@/app/lib/hooks/useIssues'
-import { LoadingSpinner, Card, Button } from '@/app/components/common'
+import { LoadingSpinner, Card, Button, Breadcrumb } from '@/app/components/common'
 import { CommentSection } from '@/app/components/issues/CommentSection'
 import { SubtaskList } from '@/app/components/issues/SubtaskList'
+import { useGenerateSummary, useGenerateSuggestion } from '@/app/lib/hooks/useAI'
 import { useState } from 'react'
+import { Sparkles, Lightbulb } from 'lucide-react'
 
 export default function IssueDetailPage() {
   const params = useParams()
+  const teamId = params.teamId as string
   const projectId = params.projectId as string
   const issueId = params.issueId as string
 
@@ -20,6 +23,18 @@ export default function IssueDetailPage() {
     title: '',
     description: '',
   })
+
+  // AI 기능 (FR-040, FR-041)
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null)
+  const [showAiSummary, setShowAiSummary] = useState(false)
+  const [showAiSuggestion, setShowAiSuggestion] = useState(false)
+
+  const summaryMutation = useGenerateSummary(projectId, issueId)
+  const suggestionMutation = useGenerateSuggestion(projectId, issueId)
+
+  // description 길이 체크 (10자 초과 필요)
+  const canUseAI = (issue?.description?.length || 0) > 10
 
   if (isLoading) return <LoadingSpinner fullScreen />
 
@@ -43,8 +58,35 @@ export default function IssueDetailPage() {
     updateMutation.mutate(editData, {
       onSuccess: () => {
         setIsEditing(false)
+        // description 변경 시 AI 캐시 초기화
+        setAiSummary(null)
+        setAiSuggestion(null)
       }
     })
+  }
+
+  // FR-040: AI 요약 생성
+  const handleGenerateSummary = async () => {
+    try {
+      const summary = await summaryMutation.mutateAsync()
+      setAiSummary(summary)
+      setShowAiSummary(true)
+    } catch (error) {
+      // 에러는 Hook의 onError에서 처리됨 (Toast 표시)
+      console.error('AI 요약 생성 에러:', error)
+    }
+  }
+
+  // FR-041: AI 해결 전략 제안
+  const handleGenerateSuggestion = async () => {
+    try {
+      const suggestion = await suggestionMutation.mutateAsync()
+      setAiSuggestion(suggestion)
+      setShowAiSuggestion(true)
+    } catch (error) {
+      // 에러는 Hook의 onError에서 처리됨 (Toast 표시)
+      console.error('AI 해결 전략 생성 에러:', error)
+    }
   }
 
   const priorityColors = {
@@ -89,7 +131,76 @@ export default function IssueDetailPage() {
               </Button>
             </div>
             {issue.description && (
-              <p className="text-gray-700 whitespace-pre-wrap">{issue.description}</p>
+              <div className="space-y-4">
+                <p className="text-gray-700 whitespace-pre-wrap">{issue.description}</p>
+
+                {/* AI 버튼 (FR-040, FR-041) */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleGenerateSummary}
+                    disabled={!canUseAI || summaryMutation.isPending}
+                    isLoading={summaryMutation.isPending}
+                    title={!canUseAI ? 'AI 기능은 설명이 10자 초과일 때 사용 가능합니다' : ''}
+                  >
+                    <Sparkles className="w-4 h-4 mr-1" />
+                    AI 요약
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleGenerateSuggestion}
+                    disabled={!canUseAI || suggestionMutation.isPending}
+                    isLoading={suggestionMutation.isPending}
+                    title={!canUseAI ? 'AI 기능은 설명이 10자 초과일 때 사용 가능합니다' : ''}
+                  >
+                    <Lightbulb className="w-4 h-4 mr-1" />
+                    AI 해결 전략
+                  </Button>
+                </div>
+
+                {/* AI 요약 결과 (FR-040) */}
+                {showAiSummary && aiSummary && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-blue-600" />
+                        <h3 className="font-semibold text-blue-900">AI 요약</h3>
+                      </div>
+                      <button
+                        onClick={() => setShowAiSummary(false)}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                      >
+                        닫기
+                      </button>
+                    </div>
+                    <p className="text-blue-900 whitespace-pre-wrap">{aiSummary}</p>
+                  </div>
+                )}
+
+                {/* AI 해결 전략 결과 (FR-041) */}
+                {showAiSuggestion && aiSuggestion && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4 text-purple-600" />
+                        <h3 className="font-semibold text-purple-900">AI 해결 전략</h3>
+                      </div>
+                      <button
+                        onClick={() => setShowAiSuggestion(false)}
+                        className="text-purple-600 hover:text-purple-800 text-sm"
+                      >
+                        닫기
+                      </button>
+                    </div>
+                    <p className="text-purple-900 whitespace-pre-wrap">{aiSuggestion}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            {!issue.description && (
+              <p className="text-gray-500 text-sm">설명이 없습니다</p>
             )}
           </div>
         )}

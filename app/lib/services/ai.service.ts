@@ -7,8 +7,8 @@ import {
   summarizeComments,
 } from '@/app/lib/ai'
 import { sha256 } from '@/app/lib/utils/hash'
-import { checkRateLimit } from '@/app/lib/rate-limit'
-import { ValidationError } from '@/app/lib/errors'
+import { checkAIRateLimit } from '@/app/lib/rate-limit'
+import { ValidationError, RateLimitError } from '@/app/lib/errors'
 
 /**
  * AI Service
@@ -22,7 +22,10 @@ export const aiService = {
     const supabase = await createClient()
 
     // Rate Limiting
-    await checkRateLimit(userId, 'ai')
+    const rateLimitResult = checkAIRateLimit(userId)
+    if (!rateLimitResult.allowed) {
+      throw new RateLimitError(rateLimitResult.error || 'Rate limit exceeded')
+    }
 
     // 이슈 조회
     const { data: issue } = await supabase
@@ -63,7 +66,10 @@ export const aiService = {
   async generateSuggestion(issueId: string, userId: string): Promise<string> {
     const supabase = await createClient()
 
-    await checkRateLimit(userId, 'ai')
+    const rateLimitResult = checkAIRateLimit(userId)
+    if (!rateLimitResult.allowed) {
+      throw new RateLimitError(rateLimitResult.error || 'Rate limit exceeded')
+    }
 
     const { data: issue } = await supabase
       .from('issues')
@@ -106,7 +112,10 @@ export const aiService = {
   ): Promise<string[]> {
     const supabase = await createClient()
 
-    await checkRateLimit(userId, 'ai')
+    const rateLimitResult = checkAIRateLimit(userId)
+    if (!rateLimitResult.allowed) {
+      throw new RateLimitError(rateLimitResult.error || 'Rate limit exceeded')
+    }
 
     const { data: issue } = await supabase
       .from('issues')
@@ -144,7 +153,10 @@ export const aiService = {
   ): Promise<Array<{ id: string; title: string; similarity: string }>> {
     const supabase = await createClient()
 
-    await checkRateLimit(userId, 'ai')
+    const rateLimitResult = checkAIRateLimit(userId)
+    if (!rateLimitResult.allowed) {
+      throw new RateLimitError(rateLimitResult.error || 'Rate limit exceeded')
+    }
 
     // 프로젝트의 기존 이슈 조회
     const { data: existingIssues } = await supabase
@@ -183,7 +195,10 @@ export const aiService = {
   async summarizeComments(issueId: string, userId: string): Promise<string> {
     const supabase = await createClient()
 
-    await checkRateLimit(userId, 'ai')
+    const rateLimitResult = checkAIRateLimit(userId)
+    if (!rateLimitResult.allowed) {
+      throw new RateLimitError(rateLimitResult.error || 'Rate limit exceeded')
+    }
 
     // 댓글 조회
     const { data: comments } = await supabase

@@ -1,6 +1,8 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 
 interface IssueCardProps {
   issue: {
@@ -28,6 +30,10 @@ interface IssueCardProps {
 }
 
 export function IssueCard({ issue }: IssueCardProps) {
+  const params = useParams()
+  const teamId = params.teamId as string
+  const projectId = params.projectId as string
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'HIGH': return 'text-red-600 bg-red-50 border-red-200'
@@ -84,7 +90,7 @@ export function IssueCard({ issue }: IssueCardProps) {
       </h4>
 
       {/* 메타 정보 */}
-      <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
         {/* 담당자 */}
         {issue.assignee && (
           <div className="flex items-center gap-1">
@@ -119,6 +125,16 @@ export function IssueCard({ issue }: IssueCardProps) {
           </div>
         )}
       </div>
+
+      {/* 상세보기 버튼 */}
+      <Link
+        href={`/teams/${teamId}/projects/${projectId}/issues/${issue.id}`}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="block w-full text-center text-xs text-blue-600 hover:text-blue-800 py-1.5 border-t border-gray-100 hover:bg-blue-50 rounded-b transition-colors cursor-pointer"
+      >
+        상세보기 →
+      </Link>
     </div>
   )
 }

@@ -20,8 +20,8 @@ export function useGenerateSummary(projectId: string, issueId: string) {
       )
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'AI 요약 생성에 실패했습니다')
+        const errorData = await res.json()
+        throw new Error(errorData.error?.message || 'AI 요약 생성에 실패했습니다')
       }
 
       const data = await res.json()
@@ -50,8 +50,8 @@ export function useGenerateSuggestion(projectId: string, issueId: string) {
       )
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'AI 제안 생성에 실패했습니다')
+        const errorData = await res.json()
+        throw new Error(errorData.error?.message || 'AI 제안 생성에 실패했습니다')
       }
 
       const data = await res.json()
@@ -80,8 +80,8 @@ export function useRecommendLabels(projectId: string, issueId: string) {
       )
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'AI 라벨 추천에 실패했습니다')
+        const errorData = await res.json()
+        throw new Error(errorData.error?.message || 'AI 라벨 추천에 실패했습니다')
       }
 
       const data = await res.json()
@@ -106,8 +106,8 @@ export function useDetectDuplicates(projectId: string) {
       })
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'AI 중복 탐지에 실패했습니다')
+        const errorData = await res.json()
+        throw new Error(errorData.error?.message || 'AI 중복 탐지에 실패했습니다')
       }
 
       const result = await res.json()
@@ -133,8 +133,8 @@ export function useSummarizeComments(projectId: string, issueId: string) {
       )
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'AI 댓글 요약에 실패했습니다')
+        const errorData = await res.json()
+        throw new Error(errorData.error?.message || 'AI 댓글 요약에 실패했습니다')
       }
 
       const data = await res.json()

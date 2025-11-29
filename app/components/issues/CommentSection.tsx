@@ -3,6 +3,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Button, Card } from '@/app/components/common'
+import { useSummarizeComments } from '@/app/lib/hooks/useAI'
+import { MessageSquare } from 'lucide-react'
 
 interface CommentSectionProps {
   issueId: string
@@ -13,6 +15,10 @@ export function CommentSection({ issueId, projectId }: CommentSectionProps) {
   const queryClient = useQueryClient()
   const [content, setContent] = useState('')
 
+  // AI 댓글 요약 상태 (FR-045)
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [showAiSummary, setShowAiSummary] = useState(false)
+
   // 댓글 조회
   const { data: comments } = useQuery({
     queryKey: ['comments', issueId],
@@ -22,6 +28,12 @@ export function CommentSection({ issueId, projectId }: CommentSectionProps) {
       return res.json()
     }
   })
+
+  // AI 댓글 요약 mutation (FR-045)
+  const summaryMutation = useSummarizeComments(projectId, issueId)
+
+  // 댓글 5개 이상일 때만 AI 요약 가능
+  const canUseSummary = (comments?.length || 0) >= 5
 
   // 댓글 작성
   const createMutation = useMutation({
@@ -66,6 +78,18 @@ export function CommentSection({ issueId, projectId }: CommentSectionProps) {
     }
   })
 
+  // FR-045: AI 댓글 요약 생성
+  const handleGenerateSummary = async () => {
+    try {
+      const summary = await summaryMutation.mutateAsync()
+      setAiSummary(summary)
+      setShowAiSummary(true)
+    } catch (error) {
+      // 에러는 Hook의 onError에서 처리됨 (Toast 표시)
+      console.error('AI 댓글 요약 생성 에러:', error)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (content.trim()) {
@@ -101,6 +125,42 @@ export function CommentSection({ issueId, projectId }: CommentSectionProps) {
           <p className="text-sm text-gray-500 text-center py-8">아직 댓글이 없습니다</p>
         )}
       </div>
+
+      {/* AI 댓글 요약 버튼 (FR-045) */}
+      {comments && comments.length > 0 && (
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleGenerateSummary}
+            disabled={!canUseSummary || summaryMutation.isPending}
+            isLoading={summaryMutation.isPending}
+            title={!canUseSummary ? 'AI 댓글 요약은 댓글이 5개 이상일 때 사용 가능합니다' : ''}
+          >
+            <MessageSquare className="w-4 h-4 mr-1" />
+            AI 댓글 요약
+          </Button>
+
+          {/* AI 요약 결과 (FR-045) */}
+          {showAiSummary && aiSummary && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-3">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-green-600" />
+                  <h3 className="font-semibold text-green-900">AI 댓글 요약</h3>
+                </div>
+                <button
+                  onClick={() => setShowAiSummary(false)}
+                  className="text-green-600 hover:text-green-800 text-sm"
+                >
+                  닫기
+                </button>
+              </div>
+              <p className="text-green-900 whitespace-pre-wrap">{aiSummary}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 댓글 작성 폼 */}
       <form onSubmit={handleSubmit}>

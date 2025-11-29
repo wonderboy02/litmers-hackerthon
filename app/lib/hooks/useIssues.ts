@@ -243,13 +243,50 @@ export function useDeleteIssue(projectId: string) {
       }
       return res.json()
     },
+    onMutate: async (issueId) => {
+      // 진행 중인 쿼리 취소 (race condition 방지)
+      await queryClient.cancelQueries({ queryKey: ['kanban', projectId] })
+      await queryClient.cancelQueries({ queryKey: ['issues', projectId] })
+
+      // 이전 데이터 백업 (롤백용)
+      const previousKanban = queryClient.getQueryData(['kanban', projectId])
+      const previousIssues = queryClient.getQueryData(['issues', projectId])
+
+      // 칸반 데이터 Optimistic Update - 삭제된 이슈 제거
+      queryClient.setQueryData(['kanban', projectId], (old: any) => {
+        if (!old || !old.states) return old
+
+        const newStates = old.states.map((state: any) => ({
+          ...state,
+          issues: (state.issues || []).filter((issue: any) => issue.id !== issueId)
+        }))
+
+        return { ...old, states: newStates }
+      })
+
+      // 이슈 리스트 데이터 Optimistic Update - 삭제된 이슈 제거
+      queryClient.setQueryData(['issues', projectId], (old: any) => {
+        if (!old) return old
+        return old.filter((issue: any) => issue.id !== issueId)
+      })
+
+      return { previousKanban, previousIssues }
+    },
+    onError: (error: Error, variables, context) => {
+      // 에러 시 롤백
+      if (context?.previousKanban) {
+        queryClient.setQueryData(['kanban', projectId], context.previousKanban)
+      }
+      if (context?.previousIssues) {
+        queryClient.setQueryData(['issues', projectId], context.previousIssues)
+      }
+      toast.error(error.message)
+    },
     onSuccess: () => {
+      // 서버 데이터로 동기화
       queryClient.invalidateQueries({ queryKey: ['issues', projectId] })
       queryClient.invalidateQueries({ queryKey: ['kanban', projectId] })
       toast.success('이슈가 삭제되었습니다')
-    },
-    onError: (error: Error) => {
-      toast.error(error.message)
     }
   })
 }
