@@ -79,7 +79,7 @@ export default function InviteAcceptPage() {
   }
 
   // 이메일 불일치 확인 (현재 로그인한 사용자와 초대된 이메일 비교)
-  const emailMismatch = user && user.email !== invitation.email
+  const emailMismatch = !!(user && user.email !== invitation.email)
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center">

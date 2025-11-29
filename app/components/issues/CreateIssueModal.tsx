@@ -203,9 +203,9 @@ export function CreateIssueModal({
                     color: label.color,
                     borderColor: label.color,
                     border: '1px solid',
-                    ringColor: selectedLabels.includes(label.id)
-                      ? label.color
-                      : 'transparent',
+                    boxShadow: selectedLabels.includes(label.id)
+                      ? `0 0 0 2px white, 0 0 0 4px ${label.color}`
+                      : 'none',
                   }}
                 >
                   {label.name}

@@ -15,7 +15,7 @@ export const issueRepository = {
   /**
    * ID로 이슈 조회
    */
-  async findById(id: string): Promise<Issue | null> {
+  async findById(id: string): Promise<any | null> {
     const supabase = await createClient()
 
     const { data } = await supabase
@@ -23,7 +23,12 @@ export const issueRepository = {
       .select(`
         *,
         assignee:users!issues_assignee_id_fkey(id, name, email, profile_image),
-        project:projects(id, name, team_id),
+        project:projects(
+          id,
+          name,
+          team_id,
+          team:teams(id, name)
+        ),
         state:project_states(id, name, color, position)
       `)
       .eq('id', id)

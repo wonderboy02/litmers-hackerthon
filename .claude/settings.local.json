@@ -3,7 +3,8 @@
     "allow": [
       "mcp__serena__get_symbols_overview",
       "mcp__serena__list_dir",
-      "mcp__serena__list_memories"
+      "mcp__serena__list_memories",
+      "Bash(npm run build:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

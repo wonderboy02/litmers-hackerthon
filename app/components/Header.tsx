@@ -15,8 +15,8 @@ export default function Header() {
 
   // 사용자 이름 첫 글자 (아바타용)
   const getInitials = () => {
-    if (userProfile?.profile?.username) {
-      return userProfile.profile.username.charAt(0).toUpperCase()
+    if (userProfile?.profile?.name) {
+      return userProfile.profile.name.charAt(0).toUpperCase()
     }
     if (userProfile?.email) {
       return userProfile.email.charAt(0).toUpperCase()
@@ -26,8 +26,8 @@ export default function Header() {
 
   // 표시할 사용자 이름
   const getDisplayName = () => {
-    if (userProfile?.profile?.username) {
-      return userProfile.profile.username
+    if (userProfile?.profile?.name) {
+      return userProfile.profile.name
     }
     if (userProfile?.email) {
       return userProfile.email.split('@')[0]
@@ -151,8 +151,8 @@ export default function Header() {
               <button className="focus:outline-none">
                 <Avatar.Root className="w-9 h-9 rounded-full bg-orange-400 flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-orange-500 transition-all">
                   <Avatar.Image
-                    src={userProfile?.profile?.avatar_url || undefined}
-                    alt={getDisplayName()} //todo: 이거 로직 많이 수정해야함. 사용성이 별로임. 
+                    src={userProfile?.profile?.profile_image || undefined}
+                    alt={getDisplayName()}
                     className="w-full h-full object-cover"
                   />
                   <Avatar.Fallback className="w-full h-full flex items-center justify-center bg-orange-400 text-white font-medium">
