@@ -33,10 +33,10 @@ export default function Home() {
           <div className="flex items-center justify-between h-16">
             <h1 className="text-2xl font-bold text-gray-900">Unlooped</h1>
             <div className="flex items-center gap-3">
-              <Link href="/auth/login">
+              <Link href="/login">
                 <Button variant="ghost">로그인</Button>
               </Link>
-              <Link href="/auth/signup">
+              <Link href="/signup">
                 <Button>시작하기</Button>
               </Link>
             </div>
@@ -57,7 +57,7 @@ export default function Home() {
             팀과 함께 이슈를 추적하고, 칸반 보드로 진행 상황을 관리하며, <br />
             AI의 도움으로 더 스마트하게 협업하세요
           </p>
-          <Link href="/auth/signup">
+          <Link href="/signup">
             <Button size="lg" className="text-lg px-8 py-4">
               무료로 시작하기
             </Button>

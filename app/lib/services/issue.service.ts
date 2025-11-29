@@ -1,4 +1,4 @@
-import { supabase } from '@/app/lib/supabase/client'
+import { createClient } from '@/app/lib/supabase/server'
 import {
   issueRepository,
   issueHistoryRepository,

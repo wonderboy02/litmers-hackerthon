@@ -1,4 +1,4 @@
-import { supabase } from '@/app/lib/supabase/client'
+import { createClient } from '@/app/lib/supabase/server'
 import { Database } from '@/types/supabase'
 
 type Comment = Database['public']['Tables']['comments']['Row']
@@ -14,6 +14,7 @@ export const commentRepository = {
    * ID로 댓글 조회
    */
   async findById(id: string): Promise<Comment | null> {
+    const supabase = await createClient()
     const { data } = await supabase
       .from('comments')
       .select(`
@@ -31,6 +32,7 @@ export const commentRepository = {
    * 이슈의 댓글 조회
    */
   async findByIssue(issueId: string, limit = 50, offset = 0): Promise<Comment[]> {
+    const supabase = await createClient()
     const { data } = await supabase
       .from('comments')
       .select(`
@@ -49,6 +51,7 @@ export const commentRepository = {
    * 댓글 생성
    */
   async create(comment: CommentInsert): Promise<Comment> {
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from('comments')
       .insert(comment)
@@ -66,6 +69,7 @@ export const commentRepository = {
    * 댓글 수정
    */
   async update(id: string, content: string): Promise<Comment> {
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from('comments')
       .update({
@@ -87,6 +91,7 @@ export const commentRepository = {
    * Soft Delete
    */
   async softDelete(id: string): Promise<void> {
+    const supabase = await createClient()
     const { error } = await supabase
       .from('comments')
       .update({ deleted_at: new Date().toISOString() })
@@ -99,6 +104,7 @@ export const commentRepository = {
    * 이슈의 댓글 개수 조회
    */
   async countByIssue(issueId: string): Promise<number> {
+    const supabase = await createClient()
     const { count, error } = await supabase
       .from('comments')
       .select('*', { count: 'exact', head: true })

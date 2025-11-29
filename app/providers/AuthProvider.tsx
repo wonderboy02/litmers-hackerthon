@@ -21,8 +21,6 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  showLoginModal: boolean;
-  setShowLoginModal: (show: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,7 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // users 테이블에서 프로필 정보 가져오기 (없으면 자동 생성)
   const fetchUserProfile = async (authUser: User) => {
@@ -115,11 +112,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setIsLoading(false);
-
-      // 세션이 없으면 로그인 모달 표시
-      if (!session) {
-        setShowLoginModal(true);
-      }
     });
 
     // 인증 상태 변경 리스너 등록
@@ -148,14 +140,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setIsLoading(false);
-
-      // 로그인 성공 시 모달 닫기
-      if (session) {
-        setShowLoginModal(false);
-      } else {
-        // 로그아웃 시 모달 열기
-        setShowLoginModal(true);
-      }
     });
 
     return () => subscription.unsubscribe();
@@ -220,8 +204,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signInWithGoogle,
     signOut,
-    showLoginModal,
-    setShowLoginModal,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

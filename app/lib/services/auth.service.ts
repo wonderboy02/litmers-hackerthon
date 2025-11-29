@@ -1,5 +1,8 @@
-import { createClient } from '@/app/lib/supabase/client'
-import { userRepository, passwordResetRepository } from '@/app/lib/repositories/user.repository'
+import { createClient } from '@/app/lib/supabase/server'
+import {
+  createUserRepository,
+  createPasswordResetRepository,
+} from '@/app/lib/repositories/user.repository'
 import { sendPasswordResetEmail } from '@/app/lib/email'
 import { AuthError, ValidationError, NotFoundError } from '@/app/lib/errors'
 import { nanoid } from 'nanoid'
@@ -18,13 +21,14 @@ export const authService = {
    * 2. public.users 프로필 생성
    */
   async signup(email: string, password: string, name: string) {
+    const supabase = await createClient()
+    const userRepo = createUserRepository(supabase)
+
     // 1. 이메일 중복 체크
-    const existing = await userRepository.findByEmail(email)
+    const existing = await userRepo.findByEmail(email)
     if (existing) {
       throw new ValidationError('이미 사용 중인 이메일입니다')
     }
-
-    const supabase = await createClient()
 
     // 2. Supabase Auth 회원가입
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -39,7 +43,7 @@ export const authService = {
     if (!authData.user) throw new AuthError('회원가입에 실패했습니다')
 
     // 3. public.users 테이블에 프로필 생성
-    await userRepository.create({
+    await userRepo.create({
       id: authData.user.id, // auth.users.id와 동일하게
       email,
       name,
@@ -94,7 +98,11 @@ export const authService = {
    * 3. 이메일 발송
    */
   async requestPasswordReset(email: string) {
-    const user = await userRepository.findByEmail(email)
+    const supabase = await createClient()
+    const userRepo = createUserRepository(supabase)
+    const passwordResetRepo = createPasswordResetRepository(supabase)
+
+    const user = await userRepo.findByEmail(email)
 
     if (!user) {
       // 보안: 사용자 존재 여부 노출 방지
@@ -111,7 +119,7 @@ export const authService = {
     const token = nanoid(32)
 
     // DB에 토큰 저장 (1시간 유효)
-    await passwordResetRepository.create(user.id, token)
+    await passwordResetRepo.create(user.id, token)
 
     // 이메일 발송
     await sendPasswordResetEmail(email, token, user.name)
@@ -126,17 +134,19 @@ export const authService = {
    * 3. 토큰 삭제
    */
   async resetPassword(token: string, newPassword: string) {
+    const supabase = await createClient()
+    const userRepo = createUserRepository(supabase)
+    const passwordResetRepo = createPasswordResetRepository(supabase)
+
     // 1. 유효한 토큰 확인
-    const resetToken = await passwordResetRepository.findValidToken(token)
+    const resetToken = await passwordResetRepo.findValidToken(token)
     if (!resetToken) {
       throw new ValidationError('유효하지 않거나 만료된 토큰입니다')
     }
 
     // 2. 사용자 조회
-    const user = await userRepository.findById(resetToken.user_id)
+    const user = await userRepo.findById(resetToken.user_id)
     if (!user) throw new NotFoundError('사용자를 찾을 수 없습니다')
-
-    const supabase = await createClient()
 
     // 3. Supabase Auth 비밀번호 변경
     // 주의: admin.updateUserById는 서버 사이드에서만 동작
@@ -147,7 +157,7 @@ export const authService = {
     if (error) throw new AuthError(error.message)
 
     // 4. 사용된 토큰 삭제
-    await passwordResetRepository.deleteToken(token)
+    await passwordResetRepo.deleteToken(token)
 
     return { success: true }
   },
@@ -159,11 +169,14 @@ export const authService = {
    * 이 함수는 OAuth 콜백 후 프로필 생성용
    */
   async handleGoogleOAuthCallback(userId: string, email: string, name: string, googleId: string) {
+    const supabase = await createClient()
+    const userRepo = createUserRepository(supabase)
+
     // public.users에 프로필이 없으면 생성
-    const existing = await userRepository.findById(userId)
+    const existing = await userRepo.findById(userId)
 
     if (!existing) {
-      await userRepository.create({
+      await userRepo.create({
         id: userId,
         email,
         name,
@@ -179,7 +192,10 @@ export const authService = {
    * FR-005: 프로필 수정
    */
   async updateProfile(userId: string, updates: { name?: string; profileImage?: string }) {
-    return await userRepository.update(userId, {
+    const supabase = await createClient()
+    const userRepo = createUserRepository(supabase)
+
+    return await userRepo.update(userId, {
       name: updates.name,
       profile_image: updates.profileImage,
     })
@@ -191,15 +207,16 @@ export const authService = {
    * 2. 새 비밀번호로 변경
    */
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
-    const user = await userRepository.findById(userId)
+    const supabase = await createClient()
+    const userRepo = createUserRepository(supabase)
+
+    const user = await userRepo.findById(userId)
     if (!user) throw new NotFoundError('사용자를 찾을 수 없습니다')
 
     // Google OAuth 사용자는 비밀번호 변경 불가
     if (user.google_id) {
       throw new ValidationError('Google 계정으로 가입한 사용자는 비밀번호를 변경할 수 없습니다')
     }
-
-    const supabase = await createClient()
 
     // 1. 현재 비밀번호 검증 (재로그인)
     const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -229,6 +246,7 @@ export const authService = {
    */
   async deleteAccount(userId: string) {
     const supabase = await createClient()
+    const userRepo = createUserRepository(supabase)
 
     // 1. 소유한 팀이 있는지 확인
     const { count } = await supabase
@@ -242,7 +260,7 @@ export const authService = {
     }
 
     // 2. public.users Soft Delete
-    await userRepository.softDelete(userId)
+    await userRepo.softDelete(userId)
 
     // 3. (선택) Supabase Auth 계정 물리 삭제
     // 주의: 이 작업은 되돌릴 수 없습니다
@@ -256,6 +274,7 @@ export const authService = {
    */
   async getCurrentUser() {
     const supabase = await createClient()
+    const userRepo = createUserRepository(supabase)
 
     const {
       data: { user },
@@ -266,7 +285,7 @@ export const authService = {
     if (!user) return null
 
     // public.users에서 프로필 정보 가져오기
-    const profile = await userRepository.findById(user.id)
+    const profile = await userRepo.findById(user.id)
     return profile
   },
 

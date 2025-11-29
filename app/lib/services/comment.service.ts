@@ -2,7 +2,7 @@ import { commentRepository } from '@/app/lib/repositories/comment.repository'
 import { issueRepository } from '@/app/lib/repositories/issue.repository'
 import { NotFoundError, ForbiddenError, ValidationError } from '@/app/lib/errors'
 import { createNotification } from '@/app/lib/notifications'
-import { supabase } from '@/app/lib/supabase/client'
+import { createClient } from '@/app/lib/supabase/server'
 
 /**
  * 댓글 Service

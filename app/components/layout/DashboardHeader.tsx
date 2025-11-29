@@ -11,7 +11,7 @@ export function DashboardHeader() {
 
   const handleLogout = async () => {
     await logoutMutation.mutateAsync()
-    router.push('/auth/login')
+    router.push('/login')
   }
 
   return (

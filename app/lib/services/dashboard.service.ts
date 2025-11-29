@@ -1,4 +1,4 @@
-import { supabase } from '@/app/lib/supabase/client'
+import { createClient } from '@/app/lib/supabase/server'
 import { NotFoundError, ForbiddenError } from '@/app/lib/errors'
 import { isWithinDays } from '@/app/lib/utils/date'
 
