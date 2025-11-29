@@ -20,7 +20,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signInWithGithub: () => Promise<void>;
   signOut: () => Promise<void>;
   showLoginModal: boolean;
   setShowLoginModal: (show: boolean) => void;
@@ -188,20 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
-      throw error;
-    }
-  };
-
-  const signInWithGithub = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
 
@@ -233,7 +219,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signInWithGoogle,
-    signInWithGithub,
     signOut,
     showLoginModal,
     setShowLoginModal,
