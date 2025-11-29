@@ -97,6 +97,23 @@ export default function IssueDetailPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
+      {/* 브레드크럼 */}
+      <Breadcrumb
+        items={[
+          {
+            label: issue.project?.team?.name || '팀',
+            href: `/teams/${teamId}`,
+          },
+          {
+            label: issue.project?.name || '프로젝트',
+            href: `/teams/${teamId}/projects/${projectId}`,
+          },
+          {
+            label: issue.title,
+          },
+        ]}
+      />
+
       {/* 헤더 */}
       <Card className="mb-6">
         {isEditing ? (

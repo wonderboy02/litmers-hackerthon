@@ -1,9 +1,15 @@
 {
   "permissions": {
     "allow": [
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__list_dir",
+      "mcp__serena__list_memories",
       "Bash(find:*)",
       "Bash(tree:*)",
-      "Bash(npm run gen:types:*)"
+      "Bash(npm run gen:types:*)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

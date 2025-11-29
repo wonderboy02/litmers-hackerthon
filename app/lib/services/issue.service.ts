@@ -109,14 +109,31 @@ export const issueService = {
 
     // 담당자에게 알림
     if (data.assigneeUserId && data.assigneeUserId !== userId) {
-      await createNotification({
-        userId: data.assigneeUserId,
-        type: 'ISSUE_ASSIGNED',
-        title: '새로운 이슈가 할당되었습니다',
-        content: `"${data.title}" 이슈의 담당자로 지정되었습니다`,
-        relatedId: issue.id,
-        relatedType: 'ISSUE'
-      })
+      console.log('🔔 [알림] 이슈 생성 - 담당자에게 알림 전송 시작')
+      console.log('   담당자 ID:', data.assigneeUserId)
+      console.log('   생성자 ID:', userId)
+      console.log('   이슈 ID:', issue.id)
+      console.log('   이슈 제목:', data.title)
+
+      try {
+        await createNotification({
+          userId: data.assigneeUserId,
+          type: 'ISSUE_ASSIGNED',
+          title: '새로운 이슈가 할당되었습니다',
+          content: `"${data.title}" 이슈의 담당자로 지정되었습니다`,
+          relatedId: issue.id,
+          relatedType: 'ISSUE'
+        })
+        console.log('✅ [알림] 알림 생성 성공')
+      } catch (error) {
+        console.error('❌ [알림] 알림 생성 실패:', error)
+        // 알림 실패해도 이슈 생성은 성공으로 처리
+      }
+    } else {
+      console.log('⏭️ [알림] 알림 생성 스킵')
+      console.log('   담당자 ID:', data.assigneeUserId)
+      console.log('   생성자 ID:', userId)
+      console.log('   조건:', data.assigneeUserId && data.assigneeUserId !== userId ? '만족' : '불만족')
     }
 
     return issue

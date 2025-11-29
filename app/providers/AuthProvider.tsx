@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .insert({
           id: authUser.id,
           email: authUser.email!,
-          username: authUser.user_metadata?.full_name || authUser.email?.split('@')[0],
+          name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
         })
         .select()
         .single();

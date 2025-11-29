@@ -19,12 +19,15 @@ export const projectRepository = {
    * ID로 프로젝트 조회
    * Soft Delete된 프로젝트는 제외
    */
-  async findById(id: string): Promise<Project | null> {
+  async findById(id: string): Promise<any | null> {
     const supabase = await createClient()
 
     const { data, error } = await supabase
       .from('projects')
-      .select('*')
+      .select(`
+        *,
+        team:teams(id, name)
+      `)
       .eq('id', id)
       .is('deleted_at', null)
       .single()

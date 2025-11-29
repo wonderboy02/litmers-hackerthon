@@ -8,6 +8,7 @@ import { ProjectStats } from '@/app/components/projects/ProjectStats'
 import { CreateIssueModal } from '@/app/components/issues/CreateIssueModal'
 import { useProject } from '@/app/lib/hooks/useProjects'
 import { useKanbanData } from '@/app/lib/hooks/useKanbanData'
+import { Breadcrumb } from '@/app/components/common'
 
 type TabType = 'kanban' | 'list'
 
@@ -68,6 +69,19 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* 브레드크럼 */}
+      <Breadcrumb
+        items={[
+          {
+            label: project.team?.name || '팀',
+            href: `/teams/${teamId}`,
+          },
+          {
+            label: project.name,
+          },
+        ]}
+      />
+
       {/* 프로젝트 헤더 */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-start justify-between">
