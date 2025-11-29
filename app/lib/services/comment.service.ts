@@ -25,7 +25,7 @@ export const commentService = {
     // 댓글 생성
     const comment = await commentRepository.create({
       issue_id: issueId,
-      user_id: userId,
+      author_id: userId,
       content
     })
 
@@ -80,7 +80,7 @@ export const commentService = {
     }
 
     // 작성자만 수정 가능
-    if (comment.user_id !== userId) {
+    if (comment.author_id !== userId) {
       throw new ForbiddenError('댓글 작성자만 수정할 수 있습니다')
     }
 
@@ -142,7 +142,7 @@ export const commentService = {
     const supabase = await createClient()
 
     // 작성자
-    if (comment.user_id === userId) {
+    if (comment.author_id === userId) {
       return true
     }
 

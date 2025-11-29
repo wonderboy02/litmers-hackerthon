@@ -26,12 +26,17 @@ export const authService = {
 
     const supabase = await createClient()
 
+    // 이메일 인증 후 리다이렉트될 URL 설정
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const emailRedirectTo = `${appUrl}/api/auth/callback`
+
     // 2. Supabase Auth 회원가입
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name }, // 메타데이터에 이름 저장
+        emailRedirectTo, // 이메일 인증 후 리다이렉트 URL
       },
     })
 

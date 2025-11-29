@@ -6,18 +6,30 @@ import { useMyInvitations } from '@/app/lib/hooks/useTeams'
 import Link from 'next/link'
 
 export default function PersonalDashboardPage() {
-  const { data: dashboard, isLoading } = useQuery({
+  const { data: dashboard, isLoading, error } = useQuery({
     queryKey: ['dashboard', 'personal'],
     queryFn: async () => {
+      console.log('Fetching personal dashboard...')
       const res = await fetch('/api/dashboard/personal')
       if (!res.ok) throw new Error('Failed to fetch')
-      return res.json()
+      const data = await res.json()
+      console.log('Dashboard data:', data)
+      return data
     },
   })
 
   const { data: invitations = [] } = useMyInvitations()
 
   if (isLoading) return <LoadingSpinner fullScreen />
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600">데이터를 불러오는 중 오류가 발생했습니다.</p>
+        <p className="text-sm text-gray-500 mt-2">{(error as Error).message}</p>
+      </div>
+    )
+  }
 
   const totalIssues = dashboard?.totalIssues || 0
   const dueSoonCount = dashboard?.dueSoonIssues?.length || 0
@@ -233,25 +245,33 @@ export default function PersonalDashboardPage() {
       {/* 소속 팀 */}
       <div>
         <h2 className="text-2xl font-semibold mb-4">소속 팀</h2>
-        <div className="grid grid-cols-3 gap-6">
-          {dashboard?.teams?.map((team: any) => (
-            <Link href={`/teams/${team.id}`} key={team.id}>
-              <Card padding="md" hover>
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-semibold text-gray-900 text-lg">{team.name}</h3>
-                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
-                    {team.role}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 mb-3">{team.description}</p>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <span>프로젝트 {team.projects?.length || 0}개</span>
-                  <span>멤버 {team.memberCount || 0}명</span>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        {(!dashboard?.teams || dashboard.teams.length === 0) ? (
+          <Card>
+            <div className="text-center py-12">
+              <p className="text-gray-500">소속된 팀이 없습니다.</p>
+              <p className="text-sm text-gray-400 mt-2">팀 초대를 받거나 새 팀을 생성해보세요.</p>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-3 gap-6">
+            {dashboard.teams.map((team: any) => (
+              <Link href={`/teams/${team.id}`} key={team.id}>
+                <Card padding="md" hover>
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900 text-lg">{team.name}</h3>
+                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                      {team.role}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span>프로젝트 {team.projects?.length || 0}개</span>
+                    <span>멤버 {team.memberCount || 0}명</span>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

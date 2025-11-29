@@ -7,6 +7,34 @@ import { Button, Input, Card } from '@/app/components/common'
 import { useAuth as useAuthHook } from '@/app/lib/hooks/useAuth'
 import { useAuth } from '@/app/providers/AuthProvider'
 
+// 에러 메시지를 사용자 친화적으로 변환하는 함수
+const getErrorMessage = (error: any): string => {
+  const message = error?.message || ''
+
+  // Supabase 에러 메시지 매핑
+  if (message.includes('Invalid login credentials')) {
+    return '이메일 또는 비밀번호가 올바르지 않습니다.'
+  }
+  if (message.includes('Email not confirmed')) {
+    return '이메일 인증이 완료되지 않았습니다. 이메일을 확인해주세요.'
+  }
+  if (message.includes('User not found')) {
+    return '존재하지 않는 계정입니다.'
+  }
+  if (message.includes('Invalid email')) {
+    return '올바른 이메일 형식이 아닙니다.'
+  }
+  if (message.includes('Too many requests')) {
+    return '너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.'
+  }
+  if (message.includes('Network')) {
+    return '네트워크 연결을 확인해주세요.'
+  }
+
+  // 기본 에러 메시지
+  return message || '로그인에 실패했습니다. 다시 시도해주세요.'
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const { loginAsync, isLoggingIn } = useAuthHook()
@@ -27,7 +55,7 @@ export default function LoginPage() {
       await loginAsync(formData)
       router.push('/personal')
     } catch (err: any) {
-      setError(err.message || '로그인에 실패했습니다')
+      setError(getErrorMessage(err))
     }
   }
 
@@ -38,7 +66,7 @@ export default function LoginPage() {
     try {
       await signInWithGoogle()
     } catch (err: any) {
-      setError(err.message || '소셜 로그인 중 오류가 발생했습니다.')
+      setError(getErrorMessage(err) || '소셜 로그인 중 오류가 발생했습니다.')
       setIsGoogleLoading(false)
     }
   }
@@ -53,8 +81,37 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 animate-in fade-in duration-200">
+              <svg
+                className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setError('')}
+                className="text-red-400 hover:text-red-600 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
           )}
 

@@ -82,8 +82,7 @@ export const notificationRepository = {
     const { error } = await supabase
       .from('notifications')
       .update({
-        is_read: true,
-        read_at: new Date().toISOString()
+        is_read: true
       })
       .eq('id', id)
 
@@ -99,8 +98,7 @@ export const notificationRepository = {
     const { error } = await supabase
       .from('notifications')
       .update({
-        is_read: true,
-        read_at: new Date().toISOString()
+        is_read: true
       })
       .eq('user_id', userId)
       .eq('is_read', false)

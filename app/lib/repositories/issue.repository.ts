@@ -22,7 +22,7 @@ export const issueRepository = {
       .from('issues')
       .select(`
         *,
-        assignee:users(id, name, email, profile_image),
+        assignee:users!issues_assignee_id_fkey(id, name, email, profile_image),
         project:projects(id, name, team_id),
         state:project_states(id, name, color, position)
       `)
@@ -43,7 +43,7 @@ export const issueRepository = {
       .from('issues')
       .select(`
         *,
-        assignee:users(id, name, email, profile_image),
+        assignee:users!issues_assignee_id_fkey(id, name, email, profile_image),
         state:project_states(id, name, color, position),
         labels:issue_labels(
           label:project_labels(id, name, color)
@@ -67,7 +67,7 @@ export const issueRepository = {
       .from('issues')
       .select(`
         *,
-        assignee:users(id, name, email, profile_image)
+        assignee:users!issues_assignee_id_fkey(id, name, email, profile_image)
       `)
       .eq('state_id', stateId)
       .is('deleted_at', null)
@@ -196,11 +196,13 @@ export const issueRepository = {
   }): Promise<Issue[]> {
     const supabase = await createClient()
 
+    console.log('🔍 이슈 검색 시작:', params)
+
     let query = supabase
       .from('issues')
       .select(`
         *,
-        assignee:users(id, name, email, profile_image),
+        assignee:users!issues_assignee_id_fkey(id, name, email, profile_image),
         state:project_states(id, name, color),
         labels:issue_labels(
           label:project_labels(id, name, color)
@@ -208,6 +210,11 @@ export const issueRepository = {
       `)
       .eq('project_id', params.projectId)
       .is('deleted_at', null)
+
+    console.log('📝 기본 쿼리 조건:', {
+      project_id: params.projectId,
+      deleted_at: null
+    })
 
     // 제목 검색
     if (params.search) {
@@ -246,7 +253,18 @@ export const issueRepository = {
       query = query.lte('due_date', params.dueDateTo)
     }
 
-    const { data } = await query.order('created_at', { ascending: false })
+    const { data, error } = await query.order('created_at', { ascending: false })
+
+    console.log('📊 검색 결과:', {
+      이슈수: data?.length || 0,
+      에러: error,
+      데이터: data
+    })
+
+    if (error) {
+      console.error('❌ 이슈 검색 에러:', error)
+      throw error
+    }
 
     return data || []
   }

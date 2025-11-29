@@ -4,14 +4,17 @@ import { authService } from '@/app/lib/services/auth.service'
 
 /**
  * GET /api/auth/callback
- * OAuth 인증 후 리다이렉트 엔드포인트
+ * 인증 후 리다이렉트 엔드포인트
  *
- * Google OAuth 흐름:
- * 1. 사용자가 Google 로그인 클릭
- * 2. Google 인증 완료 후 이 엔드포인트로 리다이렉트 (code 파라미터 포함)
- * 3. code를 session으로 교환
- * 4. public.users 프로필 생성 (없는 경우)
- * 5. 메인 페이지로 리다이렉트
+ * 처리하는 인증 유형:
+ * 1. Google OAuth 로그인
+ * 2. 이메일 인증 (회원가입 시)
+ *
+ * 흐름:
+ * 1. Supabase로부터 code 파라미터 수신
+ * 2. code를 session으로 교환
+ * 3. public.users 프로필 생성 (없는 경우)
+ * 4. 개인 대시보드로 리다이렉트
  */
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -20,13 +23,13 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createClient()
 
-    // OAuth code를 session으로 교환
+    // code를 session으로 교환 (OAuth 또는 이메일 인증)
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
-      console.error('❌ OAuth callback error:', error)
-      // 에러 발생 시 메인 페이지로 리다이렉트 (에러 쿼리 포함)
-      return NextResponse.redirect(`${requestUrl.origin}/?error=${encodeURIComponent(error.message)}`)
+      console.error('❌ Auth callback error:', error)
+      // 에러 발생 시 로그인 페이지로 리다이렉트 (에러 메시지 포함)
+      return NextResponse.redirect(`${requestUrl.origin}/login?error=${encodeURIComponent(error.message)}`)
     }
 
     if (data.user) {
@@ -34,14 +37,22 @@ export async function GET(request: NextRequest) {
       try {
         const { user } = data
         const email = user.email!
-        const name = user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0]
-        const googleId = user.user_metadata?.provider_id || user.id
 
-        console.log('✅ Creating profile for OAuth user:', { userId: user.id, email, name })
+        // OAuth 사용자인 경우 (Google 등)
+        if (user.app_metadata.provider === 'google') {
+          const name = user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0]
+          const googleId = user.user_metadata?.provider_id || user.id
 
-        await authService.handleGoogleOAuthCallback(user.id, email, name, googleId)
+          console.log('✅ Processing Google OAuth user:', { userId: user.id, email, name })
+          await authService.handleGoogleOAuthCallback(user.id, email, name, googleId)
+        }
+        // 이메일 인증 사용자인 경우
+        else if (user.app_metadata.provider === 'email') {
+          console.log('✅ Email confirmation successful for user:', { userId: user.id, email })
+          // 이메일 사용자의 경우 회원가입 시 이미 프로필이 생성되었으므로 추가 작업 불필요
+        }
 
-        console.log('✅ Profile created successfully')
+        console.log('✅ Auth callback processed successfully')
       } catch (profileError) {
         // 프로필 생성 실패 시 로그만 남기고 계속 진행
         // (이미 프로필이 있는 경우 등)
@@ -50,6 +61,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // 메인 페이지로 리다이렉트
-  return NextResponse.redirect(`${requestUrl.origin}/`)
+  // 인증 성공 시 개인 대시보드로 리다이렉트
+  return NextResponse.redirect(`${requestUrl.origin}/personal`)
 }

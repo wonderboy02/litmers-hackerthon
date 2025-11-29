@@ -16,6 +16,7 @@ export default function SignupPage() {
   })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,12 +50,63 @@ export default function SignupPage() {
         throw new Error(data.error || '회원가입에 실패했습니다')
       }
 
-      router.push('/login')
+      // 회원가입 성공 - 이메일 확인 안내 표시
+      setIsSuccess(true)
     } catch (err: any) {
       setError(err.message)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // 회원가입 성공 시 이메일 확인 안내 표시
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+        <Card className="w-full max-w-md">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"
+                />
+              </svg>
+            </div>
+
+            <h1 className="text-2xl font-bold text-gray-900 mb-3">이메일을 확인해주세요!</h1>
+            <p className="text-gray-600 mb-6">
+              <strong className="text-gray-900">{formData.email}</strong>
+              <br />
+              위 주소로 인증 이메일을 보냈습니다.
+              <br />
+              이메일의 인증 링크를 클릭하면 회원가입이 완료됩니다.
+            </p>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800">
+                💡 이메일이 보이지 않나요?
+                <br />
+                스팸 메일함을 확인해보세요.
+              </p>
+            </div>
+
+            <Link href="/login">
+              <Button variant="primary" className="w-full">
+                로그인 페이지로 이동
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    )
   }
 
   return (

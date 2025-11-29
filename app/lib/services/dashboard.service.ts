@@ -73,8 +73,7 @@ export const dashboardService = {
         team_id,
         teams!inner(
           id,
-          name,
-          description
+          name
         )
       `)
       .eq('user_id', userId)
@@ -100,7 +99,6 @@ export const dashboardService = {
         return {
           id: tm.teams.id,
           name: tm.teams.name,
-          description: tm.teams.description,
           role: tm.role,
           projects: projects || [],
           memberCount: count || 0

@@ -107,14 +107,33 @@ export function useUpdateIssue(projectId: string, issueId: string) {
       }
       return res.json()
     },
+    onMutate: async (updates) => {
+      // 진행 중인 쿼리 취소
+      await queryClient.cancelQueries({ queryKey: ['issues', issueId] })
+
+      // 이전 데이터 백업
+      const previousIssue = queryClient.getQueryData(['issues', issueId])
+
+      // Optimistic Update
+      queryClient.setQueryData(['issues', issueId], (old: any) => {
+        if (!old) return old
+        return { ...old, ...updates }
+      })
+
+      return { previousIssue }
+    },
+    onError: (error: Error, variables, context) => {
+      // 롤백
+      if (context?.previousIssue) {
+        queryClient.setQueryData(['issues', issueId], context.previousIssue)
+      }
+      toast.error(error.message)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues', issueId] })
       queryClient.invalidateQueries({ queryKey: ['issues', projectId] })
       queryClient.invalidateQueries({ queryKey: ['kanban', projectId] })
       toast.success('이슈가 수정되었습니다')
-    },
-    onError: (error: Error) => {
-      toast.error(error.message)
     }
   })
 }
@@ -139,12 +158,45 @@ export function useMoveIssue(projectId: string) {
       return res.json()
     },
     onMutate: async (variables) => {
-      // Optimistic Update
+      // 진행 중인 쿼리 취소 (race condition 방지)
+      await queryClient.cancelQueries({ queryKey: ['kanban', projectId] })
       await queryClient.cancelQueries({ queryKey: ['issues', projectId] })
 
+      // 이전 데이터 백업 (롤백용)
+      const previousKanban = queryClient.getQueryData(['kanban', projectId])
       const previousIssues = queryClient.getQueryData(['issues', projectId])
 
-      // 낙관적 업데이트 (UI 즉시 반영)
+      // 칸반 데이터 Optimistic Update
+      queryClient.setQueryData(['kanban', projectId], (old: any) => {
+        if (!old || !old.states) return old
+
+        const newStates = old.states.map((state: any) => {
+          const issues = state.issues || []
+
+          // 이전 상태에서 이슈 제거
+          const filteredIssues = issues.filter((issue: any) => issue.id !== variables.issueId)
+
+          // 새 상태에 이슈 추가
+          if (state.id === variables.newStateId) {
+            const movedIssue = old.states
+              .flatMap((s: any) => s.issues || [])
+              .find((issue: any) => issue.id === variables.issueId)
+
+            if (movedIssue) {
+              return {
+                ...state,
+                issues: [...filteredIssues, { ...movedIssue, state_id: variables.newStateId }]
+              }
+            }
+          }
+
+          return { ...state, issues: filteredIssues }
+        })
+
+        return { ...old, states: newStates }
+      })
+
+      // 이슈 리스트 데이터 Optimistic Update (기존 로직 유지)
       queryClient.setQueryData(['issues', projectId], (old: any) => {
         if (!old) return old
         return old.map((issue: any) =>
@@ -154,18 +206,22 @@ export function useMoveIssue(projectId: string) {
         )
       })
 
-      return { previousIssues }
+      return { previousKanban, previousIssues }
     },
     onError: (error: Error, variables, context) => {
       // 에러 시 롤백
+      if (context?.previousKanban) {
+        queryClient.setQueryData(['kanban', projectId], context.previousKanban)
+      }
       if (context?.previousIssues) {
         queryClient.setQueryData(['issues', projectId], context.previousIssues)
       }
       toast.error(error.message)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['issues', projectId] })
+      // 서버 데이터로 동기화
       queryClient.invalidateQueries({ queryKey: ['kanban', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['issues', projectId] })
     }
   })
 }
@@ -232,12 +288,37 @@ export function useCreateSubtask(projectId: string, issueId: string) {
       }
       return res.json()
     },
+    onMutate: async (title) => {
+      await queryClient.cancelQueries({ queryKey: ['issues', issueId] })
+
+      const previousIssue = queryClient.getQueryData(['issues', issueId])
+
+      // Optimistic Update - 임시 서브태스크 추가
+      queryClient.setQueryData(['issues', issueId], (old: any) => {
+        if (!old) return old
+        const tempSubtask = {
+          id: `temp-${Date.now()}`,
+          title,
+          is_completed: false,
+          position: old.subtasks ? old.subtasks.length : 0
+        }
+        return {
+          ...old,
+          subtasks: [...(old.subtasks || []), tempSubtask]
+        }
+      })
+
+      return { previousIssue }
+    },
+    onError: (error: Error, variables, context) => {
+      if (context?.previousIssue) {
+        queryClient.setQueryData(['issues', issueId], context.previousIssue)
+      }
+      toast.error(error.message)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues', issueId] })
       toast.success('서브태스크가 추가되었습니다')
-    },
-    onError: (error: Error) => {
-      toast.error(error.message)
     }
   })
 }
@@ -261,11 +342,34 @@ export function useUpdateSubtask(projectId: string, issueId: string) {
       }
       return res.json()
     },
+    onMutate: async ({ subtaskId, title, isCompleted }) => {
+      await queryClient.cancelQueries({ queryKey: ['issues', issueId] })
+
+      const previousIssue = queryClient.getQueryData(['issues', issueId])
+
+      // Optimistic Update
+      queryClient.setQueryData(['issues', issueId], (old: any) => {
+        if (!old || !old.subtasks) return old
+        return {
+          ...old,
+          subtasks: old.subtasks.map((st: any) =>
+            st.id === subtaskId
+              ? { ...st, ...(title !== undefined && { title }), ...(isCompleted !== undefined && { is_completed: isCompleted }) }
+              : st
+          )
+        }
+      })
+
+      return { previousIssue }
+    },
+    onError: (error: Error, variables, context) => {
+      if (context?.previousIssue) {
+        queryClient.setQueryData(['issues', issueId], context.previousIssue)
+      }
+      toast.error(error.message)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues', issueId] })
-    },
-    onError: (error: Error) => {
-      toast.error(error.message)
     }
   })
 }
@@ -287,12 +391,31 @@ export function useDeleteSubtask(projectId: string, issueId: string) {
       }
       return res.json()
     },
+    onMutate: async (subtaskId) => {
+      await queryClient.cancelQueries({ queryKey: ['issues', issueId] })
+
+      const previousIssue = queryClient.getQueryData(['issues', issueId])
+
+      // Optimistic Update - 서브태스크 제거
+      queryClient.setQueryData(['issues', issueId], (old: any) => {
+        if (!old || !old.subtasks) return old
+        return {
+          ...old,
+          subtasks: old.subtasks.filter((st: any) => st.id !== subtaskId)
+        }
+      })
+
+      return { previousIssue }
+    },
+    onError: (error: Error, variables, context) => {
+      if (context?.previousIssue) {
+        queryClient.setQueryData(['issues', issueId], context.previousIssue)
+      }
+      toast.error(error.message)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues', issueId] })
       toast.success('서브태스크가 삭제되었습니다')
-    },
-    onError: (error: Error) => {
-      toast.error(error.message)
     }
   })
 }

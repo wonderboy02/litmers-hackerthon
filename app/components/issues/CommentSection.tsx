@@ -34,6 +34,32 @@ export function CommentSection({ issueId, projectId }: CommentSectionProps) {
       if (!res.ok) throw new Error('Failed')
       return res.json()
     },
+    onMutate: async (newContent) => {
+      await queryClient.cancelQueries({ queryKey: ['comments', issueId] })
+
+      const previousComments = queryClient.getQueryData(['comments', issueId])
+
+      // Optimistic Update - 임시 댓글 추가
+      queryClient.setQueryData(['comments', issueId], (old: any) => {
+        const tempComment = {
+          id: `temp-${Date.now()}`,
+          content: newContent,
+          created_at: new Date().toISOString(),
+          user: {
+            name: '나', // 실제로는 현재 사용자 정보를 가져와야 함
+            id: 'temp-user'
+          }
+        }
+        return old ? [...old, tempComment] : [tempComment]
+      })
+
+      return { previousComments }
+    },
+    onError: (error, variables, context) => {
+      if (context?.previousComments) {
+        queryClient.setQueryData(['comments', issueId], context.previousComments)
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', issueId] })
       setContent('')
