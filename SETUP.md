@@ -106,10 +106,11 @@ Google 소셜 로그인을 위한 OAuth 2.0 클라이언트 ID를 생성합니�
    ```
 6. **승인된 리디렉션 URI** 추가:
    ```
-   http://localhost:3000/auth/callback
-   https://your-domain.vercel.app/auth/callback
+   http://localhost:3000/api/auth/callback
+   https://your-domain.vercel.app/api/auth/callback
    https://[프로젝트ID].supabase.co/auth/v1/callback
    ```
+   > ⚠️ **중요**: `/api/auth/callback` 경로를 정확히 입력하세요. `/auth/callback`이 아닙니다!
 7. **만들기** 클릭
 8. 생성된 **클라이언트 ID**와 **클라이언트 보안 비밀** 복사 및 저장
 
@@ -288,23 +289,27 @@ npm run gen:types
 3. 생성한 OAuth 클라이언트 ID 클릭
 4. **승인된 리디렉션 URI**에 Vercel 도메인 추가:
    ```
-   https://your-domain.vercel.app/auth/callback
-   https://your-domain.vercel.app
+   https://your-domain.vercel.app/api/auth/callback
    ```
+   > ⚠️ **주의**: `/api/auth/callback` 경로를 정확히 입력하세요!
 5. **저장** 클릭
 
-### 6.6 Supabase Site URL 업데이트
+### 6.6 Supabase Authentication URL 설정
 
 1. Supabase 대시보드 → **Authentication** → **URL Configuration**
 2. **Site URL** 수정:
    ```
    https://your-domain.vercel.app
    ```
-3. **Redirect URLs**에 추가:
+3. **Redirect URLs**에 다음을 추가:
    ```
-   https://your-domain.vercel.app/**
+   https://your-domain.vercel.app/api/auth/callback
+   http://localhost:3000/api/auth/callback
    ```
+   > 💡 **팁**: 개발과 프로덕션 URL을 모두 추가하면 편리합니다.
 4. **Save** 클릭
+
+> ⚠️ **중요**: Site URL이 프로덕션 도메인으로 설정되어 있어야 Google 로그인 후 올바른 도메인으로 리다이렉트됩니다!
 
 ### 6.7 자동 배포 설정
 
@@ -328,14 +333,32 @@ Vercel은 기본적으로 Git 푸시 시 자동 배포됩니다:
 
 ### 문제: Google OAuth 로그인 실패
 
-**증상**: `redirect_uri_mismatch` 에러
+**증상**: `redirect_uri_mismatch` 에러 또는 localhost로 리다이렉트됨
 
 **해결 방법**:
-1. Google Cloud Console에서 승인된 리디렉션 URI 확인
-2. Supabase에 설정한 Google OAuth 콜백 URL 확인:
-   ```
-   https://[프로젝트ID].supabase.co/auth/v1/callback
-   ```
+1. **Google Cloud Console 확인**:
+   - 승인된 리디렉션 URI에 다음이 있는지 확인:
+     ```
+     https://[프로젝트ID].supabase.co/auth/v1/callback
+     https://your-domain.vercel.app/api/auth/callback
+     ```
+   - ⚠️ `/api/auth/callback` 경로가 정확한지 확인 (`/auth/callback`이 아님!)
+
+2. **Supabase 설정 확인**:
+   - Authentication → URL Configuration
+   - **Site URL**이 프로덕션 도메인으로 설정되어 있는지 확인:
+     ```
+     https://your-domain.vercel.app
+     ```
+   - **Redirect URLs**에 다음이 추가되어 있는지 확인:
+     ```
+     https://your-domain.vercel.app/api/auth/callback
+     ```
+
+3. **Vercel 환경 변수 확인**:
+   - `NEXT_PUBLIC_APP_URL`이 프로덕션 도메인으로 설정되어 있는지 확인
+
+> 💡 **일반적인 원인**: Supabase의 Site URL이 `http://localhost:3000`으로 설정되어 있으면 프로덕션에서도 localhost로 리다이렉트됩니다!
 
 ### 문제: Gmail SMTP 이메일 발송 실패
 
