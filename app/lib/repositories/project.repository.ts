@@ -39,13 +39,17 @@ export const projectRepository = {
 
   /**
    * 팀의 모든 프로젝트 조회 (아카이브 포함/제외 옵션)
+   * 각 프로젝트의 이슈 개수도 함께 반환
    */
-  async findByTeamId(teamId: string, includeArchived: boolean = false): Promise<Project[]> {
+  async findByTeamId(teamId: string, includeArchived: boolean = false): Promise<(Project & { issueCount?: number })[]> {
     const supabase = await createClient()
 
     let query = supabase
       .from('projects')
-      .select('*')
+      .select(`
+        *,
+        issues:issues(count)
+      `)
       .eq('team_id', teamId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
@@ -57,7 +61,13 @@ export const projectRepository = {
     const { data, error } = await query
 
     if (error) throw error
-    return data || []
+
+    // 이슈 개수를 issueCount 필드로 변환
+    return (data || []).map((project: any) => ({
+      ...project,
+      issueCount: project.issues?.[0]?.count || 0,
+      issues: undefined, // 원본 issues 배열 제거
+    }))
   },
 
   /**

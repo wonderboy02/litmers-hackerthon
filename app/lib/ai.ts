@@ -1,14 +1,14 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error('ANTHROPIC_API_KEY is not set')
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error('OPENAI_API_KEY is not set')
 }
 
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+export const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 })
 
-const AI_MODEL = 'claude-3-5-sonnet-20241022'
+const AI_MODEL = 'gpt-4o'
 const MAX_TOKENS = 1024
 
 /**
@@ -22,7 +22,7 @@ export async function generateIssueSummary(
   }
 
   try {
-    const message = await anthropic.messages.create({
+    const completion = await openai.chat.completions.create({
       model: AI_MODEL,
       max_tokens: MAX_TOKENS,
       messages: [
@@ -36,12 +36,12 @@ ${description}`,
       ],
     })
 
-    const textContent = message.content.find((c) => c.type === 'text')
-    if (!textContent || textContent.type !== 'text') {
+    const responseText = completion.choices[0]?.message?.content?.trim()
+    if (!responseText) {
       throw new Error('AI 응답을 처리할 수 없습니다.')
     }
 
-    return textContent.text.trim()
+    return responseText
   } catch (error) {
     console.error('AI summary generation error:', error)
     throw new Error('AI 요약 생성에 실패했습니다.')
@@ -60,7 +60,7 @@ export async function generateIssueSuggestion(
   }
 
   try {
-    const message = await anthropic.messages.create({
+    const completion = await openai.chat.completions.create({
       model: AI_MODEL,
       max_tokens: MAX_TOKENS,
       messages: [
@@ -76,12 +76,12 @@ ${description}`,
       ],
     })
 
-    const textContent = message.content.find((c) => c.type === 'text')
-    if (!textContent || textContent.type !== 'text') {
+    const responseText = completion.choices[0]?.message?.content?.trim()
+    if (!responseText) {
       throw new Error('AI 응답을 처리할 수 없습니다.')
     }
 
-    return textContent.text.trim()
+    return responseText
   } catch (error) {
     console.error('AI suggestion generation error:', error)
     throw new Error('AI 제안 생성에 실패했습니다.')
@@ -103,7 +103,7 @@ export async function recommendLabels(
   try {
     const labelNames = availableLabels.map((l) => l.name).join(', ')
 
-    const message = await anthropic.messages.create({
+    const completion = await openai.chat.completions.create({
       model: AI_MODEL,
       max_tokens: MAX_TOKENS,
       messages: [
@@ -122,14 +122,13 @@ export async function recommendLabels(
       ],
     })
 
-    const textContent = message.content.find((c) => c.type === 'text')
-    if (!textContent || textContent.type !== 'text') {
+    const responseText = completion.choices[0]?.message?.content?.trim()
+    if (!responseText) {
       return []
     }
 
     // AI 응답 파싱
-    const recommendedLabels = textContent.text
-      .trim()
+    const recommendedLabels = responseText
       .split(',')
       .map((label) => label.trim())
       .filter((label) => availableLabels.some((l) => l.name === label))
@@ -159,7 +158,7 @@ export async function detectDuplicateIssues(
       .map((issue, idx) => `${idx + 1}. [ID: ${issue.id}] ${issue.title}`)
       .join('\n')
 
-    const message = await anthropic.messages.create({
+    const completion = await openai.chat.completions.create({
       model: AI_MODEL,
       max_tokens: MAX_TOKENS,
       messages: [
@@ -180,13 +179,8 @@ ID: [이슈ID] - 유사한 이유`,
       ],
     })
 
-    const textContent = message.content.find((c) => c.type === 'text')
-    if (!textContent || textContent.type !== 'text') {
-      return []
-    }
-
-    const responseText = textContent.text.trim()
-    if (responseText === '없음' || responseText.toLowerCase() === 'none') {
+    const responseText = completion.choices[0]?.message?.content?.trim()
+    if (!responseText || responseText === '없음' || responseText.toLowerCase() === 'none') {
       return []
     }
 
@@ -235,7 +229,7 @@ export async function summarizeComments(
       )
       .join('\n\n')
 
-    const message = await anthropic.messages.create({
+    const completion = await openai.chat.completions.create({
       model: AI_MODEL,
       max_tokens: MAX_TOKENS,
       messages: [
@@ -260,12 +254,10 @@ ${commentsText}
       ],
     })
 
-    const textContent = message.content.find((c) => c.type === 'text')
-    if (!textContent || textContent.type !== 'text') {
+    const responseText = completion.choices[0]?.message?.content?.trim()
+    if (!responseText) {
       throw new Error('AI 응답을 처리할 수 없습니다.')
     }
-
-    const responseText = textContent.text.trim()
 
     // 응답 파싱
     const summaryMatch = responseText.match(/\[요약\]([\s\S]*?)(\[주요 결정 사항\]|$)/)

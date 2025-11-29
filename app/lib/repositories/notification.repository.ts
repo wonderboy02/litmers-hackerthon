@@ -28,12 +28,22 @@ export const notificationRepository = {
   /**
    * 사용자의 알림 조회
    */
-  async findByUser(userId: string, limit = 50, offset = 0): Promise<Notification[]> {
+  async findByUser(userId: string, limit = 50, offset = 0): Promise<any[]> {
     const supabase = await createClient()
 
     const { data } = await supabase
       .from('notifications')
-      .select('*')
+      .select(`
+        *,
+        issue:reference_id (
+          id,
+          title,
+          project:project_id (
+            id,
+            team_id
+          )
+        )
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -44,12 +54,22 @@ export const notificationRepository = {
   /**
    * 사용자의 미읽은 알림 조회
    */
-  async findUnreadByUser(userId: string): Promise<Notification[]> {
+  async findUnreadByUser(userId: string): Promise<any[]> {
     const supabase = await createClient()
 
     const { data } = await supabase
       .from('notifications')
-      .select('*')
+      .select(`
+        *,
+        issue:reference_id (
+          id,
+          title,
+          project:project_id (
+            id,
+            team_id
+          )
+        )
+      `)
       .eq('user_id', userId)
       .eq('is_read', false)
       .order('created_at', { ascending: false })

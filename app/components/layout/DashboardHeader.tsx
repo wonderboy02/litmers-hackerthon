@@ -6,12 +6,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 export function DashboardHeader() {
-  const { user, logoutMutation } = useAuth()
+  const { user, logoutAsync } = useAuth()
   const router = useRouter()
 
-  const handleLogout = async () => {
-    await logoutMutation.mutateAsync()
+  const handleLogout = () => {
+    // 즉시 로그인 페이지로 이동 (더 나은 UX)
     router.push('/login')
+    // 백그라운드에서 로그아웃 처리 (캐시 클리어 및 세션 종료)
+    logoutAsync().catch(() => {
+      // 에러가 발생해도 이미 로그인 페이지로 이동했으므로 무시
+    })
   }
 
   return (

@@ -32,9 +32,10 @@ export function NotificationDropdown() {
       await markAsReadMutation.mutateAsync(notification.id)
     }
 
-    // 링크로 이동
-    if (notification.link) {
-      router.push(notification.link)
+    // reference_type과 reference_id를 기반으로 URL 생성 후 이동
+    const url = getNotificationUrl(notification)
+    if (url) {
+      router.push(url)
     }
 
     setIsOpen(false)
@@ -121,6 +122,36 @@ export function NotificationDropdown() {
       )}
     </div>
   )
+}
+
+// 알림 타입에 따른 URL 생성 헬퍼
+function getNotificationUrl(notification: any): string | null {
+  const { reference_type, reference_id, issue } = notification
+
+  // ISSUE 관련 알림인 경우
+  if (reference_type === 'ISSUE' && issue) {
+    const teamId = issue.project?.team_id
+    const projectId = issue.project?.id
+    const issueId = issue.id
+
+    if (teamId && projectId && issueId) {
+      return `/teams/${teamId}/projects/${projectId}/issues/${issueId}`
+    }
+  }
+
+  // TEAM 관련 알림인 경우 (향후 확장)
+  if (reference_type === 'TEAM' && reference_id) {
+    return `/teams/${reference_id}`
+  }
+
+  // PROJECT 관련 알림인 경우 (향후 확장)
+  if (reference_type === 'PROJECT' && reference_id) {
+    // project에서 team_id를 알아야 하므로 추가 데이터 필요
+    // 현재는 null 반환
+    return null
+  }
+
+  return null
 }
 
 // 시간 표시 헬퍼

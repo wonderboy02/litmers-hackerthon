@@ -1,5 +1,11 @@
 import { createClient } from '@/app/lib/supabase/server'
-import { generateAIResponse } from '@/app/lib/ai'
+import {
+  generateIssueSummary,
+  generateIssueSuggestion,
+  recommendLabels,
+  detectDuplicateIssues,
+  summarizeComments,
+} from '@/app/lib/ai'
 import { sha256 } from '@/app/lib/utils/hash'
 import { checkRateLimit } from '@/app/lib/rate-limit'
 import { ValidationError } from '@/app/lib/errors'
@@ -43,8 +49,7 @@ export const aiService = {
     }
 
     // AI 호출
-    const prompt = `다음 이슈 설명을 2~4문장으로 요약해주세요:\n\n${issue.description}`
-    const summary = await generateAIResponse(prompt)
+    const summary = await generateIssueSummary(issue.description)
 
     // 캐시 저장
     await this.saveCachedResult(issueId, userId, 'SUMMARY', inputHash, summary)
@@ -83,14 +88,7 @@ export const aiService = {
     }
 
     // AI 호출
-    const prompt = `다음 이슈를 해결하기 위한 접근 방식을 제안해주세요:
-
-제목: ${issue.title}
-설명: ${issue.description}
-
-구체적인 해결 전략과 단계를 제시해주세요.`
-
-    const suggestion = await generateAIResponse(prompt)
+    const suggestion = await generateIssueSuggestion(issue.title, issue.description)
 
     // 캐시 저장
     await this.saveCachedResult(issueId, userId, 'SUGGESTION', inputHash, suggestion)
@@ -125,28 +123,12 @@ export const aiService = {
     }
 
     // AI 호출 (라벨 추천은 캐싱하지 않음 - 라벨이 변경될 수 있으므로)
-    const labelNames = projectLabels.map(l => l.name).join(', ')
-    const prompt = `다음 이슈에 적합한 라벨을 최대 3개 추천해주세요.
-
-제목: ${issue.title}
-설명: ${issue.description || '(설명 없음)'}
-
-사용 가능한 라벨: ${labelNames}
-
-응답 형식: 라벨1, 라벨2, 라벨3 (쉼표로 구분, 추천할 라벨이 없으면 "없음")`
-
-    const response = await generateAIResponse(prompt)
-
-    // 응답 파싱
-    if (response.trim() === '없음') {
-      return []
-    }
-
-    const recommendedLabels = response
-      .split(',')
-      .map(l => l.trim())
-      .filter(l => projectLabels.some(pl => pl.name === l))
-      .slice(0, 3)
+    const labelsWithColor = projectLabels.map(l => ({ name: l.name, color: '' }))
+    const recommendedLabels = await recommendLabels(
+      issue.title,
+      issue.description || '',
+      labelsWithColor
+    )
 
     return recommendedLabels
   },
@@ -177,51 +159,22 @@ export const aiService = {
     }
 
     // AI 호출
-    const issueList = existingIssues
-      .map((issue, idx) => `${idx + 1}. [ID: ${issue.id}] ${issue.title}`)
-      .join('\n')
+    const duplicates = await detectDuplicateIssues(
+      newIssueTitle,
+      newIssueDescription || '',
+      existingIssues.map(i => ({
+        id: i.id,
+        title: i.title,
+        description: i.description
+      }))
+    )
 
-    const prompt = `다음 새 이슈와 유사한 기존 이슈를 최대 3개 찾아주세요:
-
-새 이슈:
-제목: ${newIssueTitle}
-설명: ${newIssueDescription || '(설명 없음)'}
-
-기존 이슈 목록:
-${issueList}
-
-응답 형식 (유사한 이슈가 있을 경우):
-ID: [이슈ID], 유사도: [HIGH/MEDIUM/LOW]
-ID: [이슈ID], 유사도: [HIGH/MEDIUM/LOW]
-
-유사한 이슈가 없으면 "없음"만 응답해주세요.`
-
-    const response = await generateAIResponse(prompt)
-
-    if (response.trim() === '없음') {
-      return []
-    }
-
-    // 응답 파싱
-    const duplicates: Array<{ id: string; title: string; similarity: string }> = []
-    const lines = response.split('\n').filter(l => l.trim())
-
-    for (const line of lines) {
-      const match = line.match(/ID:\s*([^,]+),\s*유사도:\s*(\w+)/)
-      if (match) {
-        const [_, id, similarity] = match
-        const issue = existingIssues.find(i => i.id === id.trim())
-        if (issue) {
-          duplicates.push({
-            id: issue.id,
-            title: issue.title,
-            similarity: similarity.trim()
-          })
-        }
-      }
-    }
-
-    return duplicates.slice(0, 3)
+    // 응답 형식 변환
+    return duplicates.map(d => ({
+      id: d.id,
+      title: d.title,
+      similarity: d.similarityReason
+    }))
   },
 
   /**
@@ -258,17 +211,16 @@ ID: [이슈ID], 유사도: [HIGH/MEDIUM/LOW]
     }
 
     // AI 호출
-    const commentTexts = comments
-      .map((c: any, idx) => `${idx + 1}. [${c.user.name}] ${c.content}`)
-      .join('\n')
+    const formattedComments = comments.map((c: any) => ({
+      content: c.content,
+      authorName: c.user.name,
+      createdAt: c.created_at
+    }))
 
-    const prompt = `다음 이슈의 댓글들을 3~5문장으로 요약해주세요:
-
-${commentTexts}
-
-논의의 핵심과 주요 결정 사항을 중심으로 요약해주세요.`
-
-    const summary = await generateAIResponse(prompt)
+    const result = await summarizeComments(formattedComments)
+    const summary = result.keyDecisions.length > 0
+      ? `${result.summary}\n\n주요 결정 사항:\n${result.keyDecisions.map(d => `- ${d}`).join('\n')}`
+      : result.summary
 
     // 캐시 저장
     await this.saveCachedResult(issueId, userId, 'COMMENT_SUMMARY', inputHash, summary)

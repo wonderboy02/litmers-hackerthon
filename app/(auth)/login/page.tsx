@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Card } from '@/app/components/common'
 import { useAuth as useAuthHook } from '@/app/lib/hooks/useAuth'
@@ -37,6 +37,7 @@ const getErrorMessage = (error: any): string => {
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { loginAsync, isLoggingIn } = useAuthHook()
   const { signInWithGoogle } = useAuth()
 
@@ -46,6 +47,14 @@ export default function LoginPage() {
   })
   const [error, setError] = useState('')
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+
+  // URL 파라미터에서 에러 메시지 읽기 (인증 콜백 에러)
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam) {
+      setError(getErrorMessage({ message: errorParam }))
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
