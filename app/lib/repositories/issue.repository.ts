@@ -193,7 +193,7 @@ export const issueRepository = {
     search?: string
     stateIds?: string[]
     assigneeIds?: string[]
-    priorities?: string[]
+    priorities?: ('HIGH' | 'MEDIUM' | 'LOW' | null)[]
     labelIds?: string[]
     hasDueDate?: boolean
     dueDateFrom?: string

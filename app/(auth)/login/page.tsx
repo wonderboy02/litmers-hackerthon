@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Card } from '@/app/components/common'
@@ -35,7 +35,7 @@ const getErrorMessage = (error: any): string => {
   return message || '로그인에 실패했습니다. 다시 시도해주세요.'
 }
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { loginAsync, isLoggingIn } = useAuthHook()
@@ -201,5 +201,17 @@ export default function LoginPage() {
         </div>
       </Card>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">로딩 중...</div>
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   )
 }
