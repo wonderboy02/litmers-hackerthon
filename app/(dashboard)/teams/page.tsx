@@ -59,12 +59,12 @@ export default function TeamsPage() {
 
             return (
               <Link href={`/teams/${team.id}`} key={team.id}>
-                <Card padding="lg" hover className="h-full border-t-4 border-t-blue-500 transition-all duration-300 hover:shadow-lg flex flex-col">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">{team.name}</h3>
-                      <span className="text-xs font-medium px-3 py-1 bg-blue-100 text-blue-700 rounded-full inline-block">
+                <Card padding="lg" hover className="h-full border-t-4 border-t-purple-500 transition-all duration-300 hover:shadow-lg flex flex-col">
+                  {/* Header with Team Name and Role */}
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-bold text-2xl text-gray-900">{team.name}</h3>
+                      <span className="text-sm font-medium px-3 py-1 bg-purple-100 text-purple-700 rounded-full">
                         {team.role}
                       </span>
                     </div>
@@ -80,23 +80,14 @@ export default function TeamsPage() {
                   </div>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-6 pt-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{projectCount}</div>
-                      <div className="text-xs text-gray-500 mt-1">프로젝트</div>
+                      <div className="text-4xl font-bold text-purple-600">{projectCount}</div>
+                      <div className="text-sm text-gray-500 mt-2">프로젝트</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{memberCount}</div>
-                      <div className="text-xs text-gray-500 mt-1">멤버</div>
-                    </div>
-                  </div>
-
-                  {/* Footer Icon */}
-                  <div className="flex justify-end pt-2">
-                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <div className="text-4xl font-bold text-purple-600">{memberCount}</div>
+                      <div className="text-sm text-gray-500 mt-2">멤버</div>
                     </div>
                   </div>
                 </Card>

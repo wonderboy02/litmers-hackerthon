@@ -234,36 +234,37 @@ export default function PersonalDashboardPage() {
         <h2 className="text-2xl font-bold mb-6 text-gray-900">내가 담당한 이슈 (상태별)</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Object.entries(dashboard?.issuesByState || {}).map(([state, issues]: [string, any]) => {
-            const stateColors: Record<string, { bg: string; border: string; text: string; icon: string }> = {
-              'To Do': { bg: 'from-gray-50 to-gray-100', border: 'border-l-gray-400', text: 'text-gray-700', icon: '📋' },
-              'In Progress': { bg: 'from-blue-50 to-blue-100', border: 'border-l-blue-500', text: 'text-blue-700', icon: '⚙️' },
-              'In Review': { bg: 'from-purple-50 to-purple-100', border: 'border-l-purple-500', text: 'text-purple-700', icon: '👁️' },
-              'Done': { bg: 'from-green-50 to-green-100', border: 'border-l-green-500', text: 'text-green-700', icon: '✅' },
+            const stateColors: Record<string, { bg: string; border: string; text: string; icon: string; textColor: string }> = {
+              'To Do': { bg: 'from-gray-50 to-gray-100', border: 'border-l-gray-400', text: 'text-gray-700', textColor: 'text-gray-600', icon: '📋' },
+              'In Progress': { bg: 'from-blue-50 to-blue-100', border: 'border-l-blue-500', text: 'text-blue-700', textColor: 'text-blue-600', icon: '⚙️' },
+              'In Review': { bg: 'from-purple-50 to-purple-100', border: 'border-l-purple-500', text: 'text-purple-700', textColor: 'text-purple-600', icon: '👁️' },
+              'Done': { bg: 'from-green-50 to-green-100', border: 'border-l-green-500', text: 'text-green-700', textColor: 'text-green-600', icon: '✅' },
             }
-            const colors = stateColors[state] || { bg: 'from-gray-50 to-gray-100', border: 'border-l-gray-400', text: 'text-gray-700', icon: '📌' }
+            const colors = stateColors[state] || { bg: 'from-gray-50 to-gray-100', border: 'border-l-gray-400', text: 'text-gray-700', textColor: 'text-gray-600', icon: '📌' }
 
             return (
               <Card key={state} className={`bg-gradient-to-br ${colors.bg} ${colors.border} border-l-4`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{colors.icon}</span>
-                    <h3 className={`font-bold text-gray-900`}>{state}</h3>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">{colors.icon}</span>
+                  <div className="flex-1">
+                    <h3 className={`font-bold text-lg ${colors.text}`}>{state}</h3>
+                    <p className={`text-sm ${colors.textColor}`}>{issues.length}개의 이슈</p>
                   </div>
-                  <span className={`text-2xl font-bold ${colors.text}`}>{issues.length}</span>
                 </div>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {issues.slice(0, 5).map((issue: any) => (
-                    <li key={issue.id}>
+                    <li key={issue.id} className="bg-white rounded-lg p-3 border border-gray-100 hover:shadow-md transition-all">
                       <Link
                         href={`/teams/${issue.project?.team_id}/projects/${issue.project?.id}/issues/${issue.id}`}
-                        className="text-sm text-gray-700 hover:text-blue-600 hover:font-semibold block truncate transition-colors"
+                        className="block"
                       >
-                        → {issue.title}
+                        <p className="text-sm font-semibold text-gray-900 truncate">{issue.title}</p>
+                        <p className={`text-xs ${colors.textColor} mt-1`}>{issue.project?.name}</p>
                       </Link>
                     </li>
                   ))}
                   {issues.length > 5 && (
-                    <li className="text-sm text-gray-500 font-medium pt-2 border-t border-gray-200">
+                    <li className="text-sm text-gray-500 font-medium pt-2 border-t border-gray-200 text-center">
                       +{issues.length - 5}개 더보기
                     </li>
                   )}
@@ -292,35 +293,26 @@ export default function PersonalDashboardPage() {
 
               return (
                 <Link href={`/teams/${team.id}`} key={team.id}>
-                  <Card padding="lg" hover className="h-full border-t-4 border-t-purple-500 transition-all duration-300 hover:shadow-lg">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg text-gray-900 mb-1">{team.name}</h3>
-                        <span className="text-xs font-medium px-3 py-1 bg-purple-100 text-purple-700 rounded-full inline-block">
+                  <Card padding="lg" hover className="h-full border-t-4 border-t-purple-500 transition-all duration-300 hover:shadow-lg flex flex-col">
+                    {/* Header with Team Name and Role */}
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-bold text-2xl text-gray-900">{team.name}</h3>
+                        <span className="text-sm font-medium px-3 py-1 bg-purple-100 text-purple-700 rounded-full">
                           {team.role}
                         </span>
                       </div>
                     </div>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t border-gray-100">
+                    <div className="grid grid-cols-2 gap-6 pt-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">{projectCount}</div>
-                        <div className="text-xs text-gray-500 mt-1">프로젝트</div>
+                        <div className="text-4xl font-bold text-purple-600">{projectCount}</div>
+                        <div className="text-sm text-gray-500 mt-2">프로젝트</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">{memberCount}</div>
-                        <div className="text-xs text-gray-500 mt-1">멤버</div>
-                      </div>
-                    </div>
-
-                    {/* Footer Icon */}
-                    <div className="flex justify-end pt-2">
-                      <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
+                        <div className="text-4xl font-bold text-purple-600">{memberCount}</div>
+                        <div className="text-sm text-gray-500 mt-2">멤버</div>
                       </div>
                     </div>
                   </Card>
